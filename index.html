@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>JEDI AI · Asisten & Scanner HD + Voice</title>
+    <title>JEDI AI · Voice Assistant + Scanner HD</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#a8d5c4">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -17,26 +17,135 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background-color: #fdfaf6; font-family: 'Courier New', Courier, monospace; color: #1a1a1a; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
-        .card { background-color: #fff; border: 2px solid #000; box-shadow: 4px 4px 0px #000; border-radius: 0; }
-        .input-box { border: 2px solid #000; background: #fff; border-radius: 0; }
-        .btn-action { background-color: #ffd05a; border: 2px solid #000; box-shadow: 3px 3px 0px #000; cursor: pointer; transition: all 0.05s linear; display: inline-flex; align-items: center; justify-content: center; }
-        .btn-action:active { transform: translate(2px, 2px); box-shadow: none; }
-        .user-bubble { background-color: #fde047; border: 2px solid #000; box-shadow: 2px 2px 0px #000; border-radius: 16px; }
-        .ai-bubble { background-color: #ffcceb; border: 2px solid #000; box-shadow: 2px 2px 0px #000; border-radius: 16px; }
+        body {
+            background-color: #fdfaf6;
+            font-family: 'Courier New', Courier, monospace;
+            color: #1a1a1a;
+            height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .card {
+            background-color: #fff;
+            border: 2px solid #000;
+            box-shadow: 4px 4px 0px #000;
+            border-radius: 0;
+        }
+        .input-box {
+            border: 2px solid #000;
+            background: #fff;
+            border-radius: 0;
+        }
+        .btn-action {
+            background-color: #ffd05a;
+            border: 2px solid #000;
+            box-shadow: 3px 3px 0px #000;
+            cursor: pointer;
+            transition: all 0.05s linear;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn-action:active {
+            transform: translate(2px, 2px);
+            box-shadow: none;
+        }
+        .user-bubble {
+            background-color: #fde047;
+            border: 2px solid #000;
+            box-shadow: 2px 2px 0px #000;
+            border-radius: 16px;
+        }
+        .ai-bubble {
+            background-color: #ffcceb;
+            border: 2px solid #000;
+            box-shadow: 2px 2px 0px #000;
+            border-radius: 16px;
+        }
         #chat-window::-webkit-scrollbar { width: 4px; }
-        .loading-dots::after { content: '...'; animation: dots 1.2s steps(4, end) infinite; display: inline-block; width: 24px; }
+        .loading-dots::after {
+            content: '...';
+            animation: dots 1.2s steps(4, end) infinite;
+            display: inline-block;
+            width: 24px;
+        }
         @keyframes dots { 0%,20%{content:'';}40%{content:'.';}80%,100%{content:'..';} }
-        .install-btn { background: #000; color: #ffd05a; border: none; border-radius: 40px; padding: 6px 14px; font-weight: bold; font-size: 12px; cursor: pointer; }
-        .history-btn, .newchat-btn { background: transparent; border: 2px solid #000; border-radius: 30px; padding: 4px 10px; font-size: 12px; font-weight: bold; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; }
-        .mic-btn { background-color: #ffd05a; border: 2px solid #000; box-shadow: 3px 3px 0px #000; border-radius: 60px; width: 48px; height: 48px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.05s linear; }
-        .mic-btn.listening { background-color: #ff4444; animation: pulse 1s infinite; }
-        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
-        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 50; }
-        .modal-content { background: white; border: 2px solid black; width: 90%; max-width: 400px; max-height: 80vh; overflow-y: auto; padding: 16px; }
-        .session-item { border-bottom: 1px solid #ccc; padding: 10px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+        .install-btn {
+            background: #000;
+            color: #ffd05a;
+            border: none;
+            border-radius: 40px;
+            padding: 6px 14px;
+            font-weight: bold;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        .history-btn, .newchat-btn {
+            background: transparent;
+            border: 2px solid #000;
+            border-radius: 30px;
+            padding: 4px 10px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .mic-btn, .speaker-btn {
+            background-color: #ffd05a;
+            border: 2px solid #000;
+            box-shadow: 3px 3px 0px #000;
+            border-radius: 60px;
+            width: 48px;
+            height: 48px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: 0.05s linear;
+        }
+        .mic-btn.listening {
+            background-color: #ff4444;
+            animation: pulse 1s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        .modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+        }
+        .modal-content {
+            background: white;
+            border: 2px solid black;
+            width: 90%;
+            max-width: 400px;
+            max-height: 80vh;
+            overflow-y: auto;
+            padding: 16px;
+        }
+        .session-item {
+            border-bottom: 1px solid #ccc;
+            padding: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+        }
         .session-item:hover { background: #f0f0f0; }
-        @media (min-width: 768px) { .chat-container { max-width: 800px; margin-left: auto; margin-right: auto; } }
+        @media (max-width: 640px) {
+            .mic-btn, .speaker-btn { width: 44px; height: 44px; }
+            .btn-action { width: 44px; height: 44px; }
+        }
     </style>
 </head>
 <body>
@@ -48,8 +157,15 @@
             <h1 class="font-bold text-base sm:text-lg">AiSISTENS <span class="text-indigo-700">TKJ1</span></h1>
         </div>
         <div class="flex items-center gap-2">
-            <button id="newChatBtn" class="newchat-btn" title="Percakapan Baru"><i data-lucide="plus-square" class="w-4 h-4"></i><span class="hidden sm:inline">New Chat</span></button>
-            <button id="historyBtn" class="history-btn" title="Riwayat Chat"><i data-lucide="clock" class="w-4 h-4"></i><span class="hidden sm:inline">Riwayat</span></button>
+            <button id="newChatBtn" class="newchat-btn" title="Percakapan Baru">
+                <i data-lucide="plus-square" class="w-4 h-4"></i> <span class="hidden sm:inline">New Chat</span>
+            </button>
+            <button id="historyBtn" class="history-btn" title="Riwayat Chat">
+                <i data-lucide="clock" class="w-4 h-4"></i> <span class="hidden sm:inline">Riwayat</span>
+            </button>
+            <button id="speakerToggleBtn" class="speaker-btn" title="Suara AI On/Off">
+                <i data-lucide="volume-2" class="w-5 h-5"></i>
+            </button>
             <i data-lucide="bell" class="w-5 h-5 cursor-pointer"></i>
             <img src="https://i.ibb.co.com/SDRnxRcX/tkj-logo.jpg" alt="Profile" class="w-9 h-9 rounded-full border-2 border-black object-cover">
             <button id="installBtn" class="install-btn" style="display:none;">📲 Install</button>
@@ -67,18 +183,21 @@
             <div id="chat-window" class="flex-1 overflow-y-auto p-3 space-y-3"></div>
         </div>
 
-        <!-- Input area dengan tombol mic (dipastikan muncul) -->
+        <!-- Input area dengan tombol mic dan speaker toggle -->
         <div class="flex gap-3 items-center mt-4 flex-shrink-0">
             <input type="file" id="fileInput" class="hidden" accept="image/jpeg, image/png, image/jpg, image/webp">
-            <button id="uploadTriggerBtn" class="btn-action w-12 h-12 rounded-full text-xl"><i data-lucide="plus" class="w-5 h-5"></i></button>
-            <!-- Tombol mic selalu ditampilkan -->
-            <button id="micBtn" class="mic-btn" title="Tekan dan bicara"><i data-lucide="mic" class="w-5 h-5"></i></button>
-            <input type="text" id="userInput" class="input-box flex-1 p-3 rounded-full outline-none font-mono text-sm" placeholder="Tulis atau tekan mic untuk bicara...">
+            <button id="uploadTriggerBtn" class="btn-action w-12 h-12 rounded-full text-xl">
+                <i data-lucide="plus" class="w-5 h-5"></i>
+            </button>
+            <button id="micBtn" class="mic-btn" title="Bicara ke AI">
+                <i data-lucide="mic" class="w-5 h-5"></i>
+            </button>
+            <input type="text" id="userInput" class="input-box flex-1 p-3 rounded-full outline-none font-mono text-sm" placeholder="Tulis atau bicara...">
             <button id="sendBtn" class="btn-action px-5 py-3 rounded-full font-bold uppercase text-sm">KIRIM</button>
         </div>
     </div>
 
-    <!-- Modal Riwayat Session -->
+    <!-- Modal Riwayat -->
     <div id="historyModal" class="modal hidden">
         <div class="modal-content">
             <div class="flex justify-between items-center mb-4">
@@ -94,7 +213,7 @@
     </div>
 
     <script>
-        // ======================== MULTI SESSION HISTORY ========================
+        // ======================== MULTI SESSION HISTORY (sama seperti sebelumnya) ========================
         const SESSIONS_KEY = 'jedi_sessions';
         const CURRENT_ID_KEY = 'jedi_current_session_id';
         
@@ -133,9 +252,6 @@
                 sessions[index].messages = currentMessages;
                 sessions[index].name = new Date().toLocaleString('id-ID');
                 saveSessions(sessions);
-            } else {
-                sessions.unshift({ id: currentId, name: new Date().toLocaleString('id-ID'), messages: currentMessages });
-                saveSessions(sessions);
             }
         }
         
@@ -149,7 +265,6 @@
             setCurrentSessionId(newId);
             renderCurrentChat();
             updateSessionBadge();
-            return newId;
         }
         
         function renderSessionChat(sessionId) {
@@ -186,7 +301,8 @@
         
         function newChat() { saveCurrentSession(); addNewSession(); }
         function deleteSession(sessionId) {
-            let sessions = loadSessions().filter(s => s.id !== sessionId);
+            let sessions = loadSessions();
+            sessions = sessions.filter(s => s.id !== sessionId);
             saveSessions(sessions);
             if (getCurrentSessionId() === sessionId) {
                 if (sessions.length > 0) { setCurrentSessionId(sessions[0].id); renderCurrentChat(); }
@@ -201,7 +317,7 @@
             const container = document.getElementById('sessionList');
             const countSpan = document.getElementById('sessionCount');
             if (!container) return;
-            if (sessions.length === 0) { container.innerHTML = '<div class="text-center text-gray-500 py-4">Belum ada riwayat</div>'; if(countSpan) countSpan.textContent = ''; return; }
+            if (sessions.length === 0) { container.innerHTML = '<div class="text-center text-gray-500 py-4">Belum ada riwayat</div>'; if(countSpan) countSpan.textContent=''; return; }
             let html = '';
             sessions.forEach(session => {
                 const preview = session.messages[0]?.text.substring(0, 40) || 'Percakapan kosong';
@@ -209,14 +325,21 @@
             });
             container.innerHTML = html;
             if(countSpan) countSpan.textContent = `${sessions.length} percakapan`;
-            document.querySelectorAll('.load-session-btn').forEach(btn => btn.addEventListener('click', (e) => { e.stopPropagation(); const id = btn.getAttribute('data-id'); saveCurrentSession(); renderSessionChat(id); document.getElementById('historyModal').classList.add('hidden'); }));
-            document.querySelectorAll('.delete-session-btn').forEach(btn => btn.addEventListener('click', (e) => { e.stopPropagation(); const id = btn.getAttribute('data-id'); if(confirm('Hapus percakapan ini?')) deleteSession(id); }));
-            document.querySelectorAll('.session-item').forEach(item => item.addEventListener('click', (e) => { if(e.target.classList.contains('delete-session-btn')||e.target.classList.contains('load-session-btn')) return; const id = item.getAttribute('data-id'); saveCurrentSession(); renderSessionChat(id); document.getElementById('historyModal').classList.add('hidden'); }));
+            document.querySelectorAll('.load-session-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => { e.stopPropagation(); const id = btn.getAttribute('data-id'); saveCurrentSession(); renderSessionChat(id); document.getElementById('historyModal').classList.add('hidden'); });
+            });
+            document.querySelectorAll('.delete-session-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => { e.stopPropagation(); const id = btn.getAttribute('data-id'); if(confirm('Hapus percakapan ini?')) deleteSession(id); });
+            });
+            document.querySelectorAll('.session-item').forEach(item => {
+                item.addEventListener('click', (e) => { if(e.target.classList.contains('delete-session-btn')||e.target.classList.contains('load-session-btn')) return; const id = item.getAttribute('data-id'); saveCurrentSession(); renderSessionChat(id); document.getElementById('historyModal').classList.add('hidden'); });
+            });
         }
         
         // ======================== FUNGSI CHAT ========================
         let currentUserIP = 'unknown';
         let greeted = false;
+        
         function addMessageToDOM(text, isUser = false) {
             const chatWindow = document.getElementById('chat-window');
             const div = document.createElement('div');
@@ -225,7 +348,12 @@
             chatWindow.appendChild(div);
             chatWindow.scrollTop = chatWindow.scrollHeight;
             saveCurrentMessagesToSession();
+            // Jika bukan user dan suara AI aktif, ucapkan teks
+            if (!isUser && voiceEnabled) {
+                speakText(text);
+            }
         }
+        
         function saveCurrentMessagesToSession() {
             const currentId = getCurrentSessionId();
             if (!currentId) return;
@@ -234,28 +362,27 @@
             const index = sessions.findIndex(s => s.id === currentId);
             if (index !== -1) { sessions[index].messages = messages; saveSessions(sessions); }
         }
+        
         window.addMessage = addMessageToDOM;
         
-        // Firebase (Custom Replies) - dummy jika tidak konfigurasi
+        // ======================== FIREBASE (Custom Replies) & TELEGRAM ========================
         const firebaseConfig = { apiKey: "AIzaSyDummyPleaseReplaceWithYourKey", authDomain: "your-project.firebaseapp.com", databaseURL: "https://your-project-default-rtdb.firebaseio.com", projectId: "your-project", storageBucket: "your-project.appspot.com", messagingSenderId: "123456789", appId: "1:123456789:web:abcdef" };
         let customReplies = {};
         if (firebaseConfig.apiKey !== "AIzaSyDummyPleaseReplaceWithYourKey") {
             firebase.initializeApp(firebaseConfig);
-            firebase.database().ref('custom_replies').on('value', (snapshot) => {
-                customReplies = snapshot.val() || {};
-                if (currentUserIP && customReplies[currentUserIP] && !greeted) { greeted = true; setTimeout(() => addMessageToDOM(customReplies[currentUserIP], false), 1500); }
-            });
+            const database = firebase.database();
+            const customRepliesRef = database.ref('custom_replies');
+            customRepliesRef.on('value', (snapshot) => { customReplies = snapshot.val() || {}; if (currentUserIP && customReplies[currentUserIP] && !greeted) { greeted = true; setTimeout(() => addMessage(customReplies[currentUserIP], false), 1500); } });
         }
         
-        // Telegram Log
         const TELEGRAM_TOKEN = '8374022759:AAEOHoYo__6St8eqaumRCzsgKgbGLV08fpU';
         const TELEGRAM_CHAT_ID = '7577331454';
         async function sendToTelegram(message) { try { await fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text: message, parse_mode: 'HTML' }) }); } catch(e) { console.error(e); } }
-        function getDeviceName(ua) { if(/android/i.test(ua)) return '📱 Android'; if(/iphone|ipad|ipod/i.test(ua)) return '🍎 iOS'; if(/windows/i.test(ua)) return '💻 Windows'; return '🌐 Lainnya'; }
+        function getDeviceName(ua) { if (/android/i.test(ua)) return '📱 Android'; if (/iphone|ipad|ipod/i.test(ua)) return '🍎 iOS'; if (/windows/i.test(ua)) return '💻 Windows'; return '🌐 Lainnya'; }
         async function reportDevice() { try { let ip = 'tidak diketahui'; try { const res = await fetch('https://api.ipify.org?format=json'); const data = await res.json(); ip = data.ip; currentUserIP = ip; } catch(e) {} const ua = navigator.userAgent; const device = getDeviceName(ua); const waktu = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' }); await sendToTelegram(`🚀 <b>PENGUNJUNG BARU</b>\n🕒 ${waktu}\n🌐 IP: <code>${ip}</code>\n📱 ${device}\n🔗 ${window.location.href}`); } catch(e) {} }
         window.addEventListener('load', () => { reportDevice(); renderCurrentChat(); });
         
-        // AI Response
+        // ======================== AI CHAT ========================
         function getAIResponse(msg) {
             const m = msg.toLowerCase().trim();
             if (m.match(/(halo|hai|hey|pagi|siang)/)) return "Halo juga! 😊 Ada yang bisa dibantu? (Jadwal, materi, scan dokumen)";
@@ -268,72 +395,79 @@
         
         const userInput = document.getElementById('userInput');
         const sendBtn = document.getElementById('sendBtn');
-        function showTyping() { const w = document.getElementById('chat-window'); const d = document.createElement('div'); d.id = 'typingIndicator'; d.className = 'ai-bubble p-3 max-w-[85%]'; d.innerHTML = '<span class="loading-dots">Memproses</span>'; w.appendChild(d); w.scrollTop = w.scrollHeight; }
-        function removeTyping() { const el = document.getElementById('typingIndicator'); if(el) el.remove(); }
-        async function sendMessage() { const text = userInput.value.trim(); if(!text) return; addMessageToDOM(text, true); userInput.value = ''; showTyping(); setTimeout(() => { const reply = getAIResponse(text); removeTyping(); addMessageToDOM(reply, false); }, 600); }
-        sendBtn.addEventListener('click', sendMessage);
-        userInput.addEventListener('keypress', (e) => { if(e.key === 'Enter') sendMessage(); });
         
-        // ======================== VOICE INPUT (MIC) - DIPASTIKAN MUNCUL DAN BERFUNGSI ========================
+        function showTyping() { const chatWindow = document.getElementById('chat-window'); const typingDiv = document.createElement('div'); typingDiv.id = 'typingIndicator'; typingDiv.className = 'ai-bubble p-3 max-w-[85%]'; typingDiv.innerHTML = '<span class="loading-dots">Memproses</span>'; chatWindow.appendChild(typingDiv); chatWindow.scrollTop = chatWindow.scrollHeight; }
+        function removeTyping() { const el = document.getElementById('typingIndicator'); if (el) el.remove(); }
+        
+        async function sendMessage() {
+            const text = userInput.value.trim();
+            if (!text) return;
+            addMessage(text, true);
+            userInput.value = '';
+            showTyping();
+            setTimeout(() => {
+                const reply = getAIResponse(text);
+                removeTyping();
+                addMessage(reply, false);
+            }, 600);
+        }
+        
+        sendBtn.addEventListener('click', sendMessage);
+        userInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
+        
+        // ======================== VOICE INPUT (MIC) ========================
         const micBtn = document.getElementById('micBtn');
         let recognition = null;
         let isListening = false;
         
-        // Cek dukungan
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (SpeechRecognition) {
+        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             recognition = new SpeechRecognition();
             recognition.continuous = false;
             recognition.interimResults = false;
             recognition.lang = 'id-ID';
-            
-            recognition.onstart = () => {
-                isListening = true;
-                micBtn.classList.add('listening');
-                micBtn.title = 'Mendengarkan... klik untuk berhenti';
-            };
-            recognition.onend = () => {
-                isListening = false;
-                micBtn.classList.remove('listening');
-                micBtn.title = 'Tekan dan bicara';
-            };
-            recognition.onresult = (event) => {
-                const transcript = event.results[0][0].transcript;
-                userInput.value = transcript;
-                sendMessage(); // langsung kirim otomatis
-            };
-            recognition.onerror = (event) => {
-                console.error('Speech error', event.error);
-                isListening = false;
-                micBtn.classList.remove('listening');
-                if (event.error === 'not-allowed') {
-                    addMessageToDOM('❌ Izin mikrofon ditolak. Izinkan akses mikrofon untuk bicara ke AI.', false);
-                } else {
-                    addMessageToDOM('❌ Gagal menangkap suara, coba lagi.', false);
-                }
-            };
-            
-            micBtn.addEventListener('click', () => {
-                if (isListening) {
-                    recognition.stop();
-                } else {
-                    try {
-                        recognition.start();
-                    } catch(e) {
-                        console.log(e);
-                        addMessageToDOM('❌ Mulai ulang halaman jika voice tidak berfungsi.', false);
-                    }
-                }
-            });
+            recognition.onstart = () => { isListening = true; micBtn.classList.add('listening'); micBtn.title = 'Mendengarkan...'; };
+            recognition.onend = () => { isListening = false; micBtn.classList.remove('listening'); micBtn.title = 'Bicara ke AI'; };
+            recognition.onresult = (event) => { const transcript = event.results[0][0].transcript; userInput.value = transcript; sendMessage(); };
+            recognition.onerror = (event) => { console.error(event.error); isListening = false; micBtn.classList.remove('listening'); if (event.error === 'not-allowed') addMessage('❌ Izin mikrofon ditolak.', false); else addMessage('❌ Gagal menangkap suara.', false); };
+            micBtn.addEventListener('click', () => { if (isListening) recognition.stop(); else recognition.start(); });
         } else {
-            // Browser tidak mendukung: tampilkan pesan di konsol, tapi tombol tetap ada (nonaktif)
-            micBtn.style.opacity = '0.5';
-            micBtn.style.cursor = 'not-allowed';
-            micBtn.title = 'Browser tidak mendukung voice input';
-            micBtn.addEventListener('click', () => {
-                addMessageToDOM('❌ Browser Anda tidak mendukung fitur voice input. Gunakan Chrome atau browser modern.', false);
-            });
+            micBtn.style.display = 'none';
         }
+        
+        // ======================== VOICE OUTPUT (TEXT-TO-SPEECH) ========================
+        let voiceEnabled = true;
+        const speakerBtn = document.getElementById('speakerToggleBtn');
+        let speechSynthesis = window.speechSynthesis;
+        let speaking = false;
+        
+        function speakText(text) {
+            if (!voiceEnabled) return;
+            if (!speechSynthesis) return;
+            // Bersihkan teks dari emoji jika perlu
+            const cleanText = text.replace(/[^\w\s,.]/g, '');
+            const utterance = new SpeechSynthesisUtterance(cleanText);
+            utterance.lang = 'id-ID';
+            utterance.rate = 0.95;
+            utterance.pitch = 1;
+            speechSynthesis.cancel(); // Hentikan suara sebelumnya
+            speechSynthesis.speak(utterance);
+        }
+        
+        speakerBtn.addEventListener('click', () => {
+            voiceEnabled = !voiceEnabled;
+            if (voiceEnabled) {
+                speakerBtn.innerHTML = '<i data-lucide="volume-2" class="w-5 h-5"></i>';
+                speakerBtn.title = 'Suara AI Aktif';
+                addMessage('🔊 Suara AI diaktifkan.', false);
+            } else {
+                speakerBtn.innerHTML = '<i data-lucide="volume-x" class="w-5 h-5"></i>';
+                speakerBtn.title = 'Suara AI Dimatikan';
+                addMessage('🔇 Suara AI dimatikan.', false);
+                if (speechSynthesis) speechSynthesis.cancel();
+            }
+            lucide.createIcons();
+        });
         
         // ======================== SCANNER HD ========================
         async function adaptiveThresholdScan(imgElement, maxDim = 1600) {
@@ -346,39 +480,24 @@
                 ctx.drawImage(imgElement, 0, 0, width, height);
                 let imgData = ctx.getImageData(0, 0, width, height);
                 let data = imgData.data;
-                for (let i = 0; i < data.length; i += 4) {
-                    const gray = 0.299 * data[i] + 0.587 * data[i+1] + 0.114 * data[i+2];
-                    data[i] = data[i+1] = data[i+2] = gray;
-                }
+                for (let i = 0; i < data.length; i += 4) { const gray = 0.299 * data[i] + 0.587 * data[i+1] + 0.114 * data[i+2]; data[i] = data[i+1] = data[i+2] = gray; }
                 ctx.putImageData(imgData, 0, 0);
                 const w = width, h = height;
                 const integral = new Array((w+1)*(h+1)).fill(0);
-                for (let y = 0; y < h; y++) {
-                    let rowSum = 0;
-                    for (let x = 0; x < w; x++) {
-                        const idx = (y * w + x) * 4;
-                        rowSum += data[idx];
-                        integral[(y+1)*(w+1) + (x+1)] = integral[y*(w+1) + (x+1)] + rowSum;
-                    }
-                }
+                for (let y = 0; y < h; y++) { let rowSum = 0; for (let x = 0; x < w; x++) { const idx = (y * w + x) * 4; rowSum += data[idx]; integral[(y+1)*(w+1) + (x+1)] = integral[y*(w+1) + (x+1)] + rowSum; } }
                 const block = 31;
                 const result = ctx.getImageData(0, 0, w, h);
                 const resPix = result.data;
                 for (let y = 0; y < h; y++) {
                     for (let x = 0; x < w; x++) {
-                        const x1 = Math.max(0, x - block/2);
-                        const y1 = Math.max(0, y - block/2);
-                        const x2 = Math.min(w, x + block/2);
-                        const y2 = Math.min(h, y + block/2);
+                        const x1 = Math.max(0, x - block/2), y1 = Math.max(0, y - block/2), x2 = Math.min(w, x + block/2), y2 = Math.min(h, y + block/2);
                         const count = (x2 - x1) * (y2 - y1);
                         const sum = integral[y2*(w+1) + x2] - integral[y1*(w+1) + x2] - integral[y2*(w+1) + x1] + integral[y1*(w+1) + x1];
                         const mean = sum / count;
                         const idx = (y * w + x) * 4;
-                        const pixel = data[idx];
                         const threshold = mean * 0.85;
-                        const binary = pixel < threshold ? 0 : 255;
-                        resPix[idx] = resPix[idx+1] = resPix[idx+2] = binary;
-                        resPix[idx+3] = 255;
+                        const binary = data[idx] < threshold ? 0 : 255;
+                        resPix[idx] = resPix[idx+1] = resPix[idx+2] = binary; resPix[idx+3] = 255;
                     }
                 }
                 ctx.putImageData(result, 0, 0);
@@ -397,12 +516,10 @@
                 img.src = scanned;
                 await new Promise(r => { img.onload = r; });
                 const pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
-                const pdfW = pdf.internal.pageSize.getWidth();
-                const pdfH = pdf.internal.pageSize.getHeight();
+                const pdfW = pdf.internal.pageSize.getWidth(), pdfH = pdf.internal.pageSize.getHeight();
                 let iw = img.width, ih = img.height;
                 let ratio = iw / ih;
-                let finW = pdfW - 20;
-                let finH = finW / ratio;
+                let finW = pdfW - 20, finH = finW / ratio;
                 if (finH > pdfH - 20) { finH = pdfH - 20; finW = finH * ratio; }
                 const xOff = (pdfW - finW)/2, yOff = (pdfH - finH)/2;
                 pdf.addImage(scanned, 'JPEG', xOff, yOff, finW, finH, undefined, 'FAST');
@@ -415,57 +532,47 @@
         uploadBtn.addEventListener('click', () => fileInput.click());
         fileInput.addEventListener('change', async (e) => {
             const file = e.target.files[0];
-            if (!file || !file.type.startsWith('image/')) { addMessageToDOM("❌ Upload file gambar.", false); return; }
-            addMessageToDOM("📤 Memproses scan HD...", false);
+            if (!file || !file.type.startsWith('image/')) { addMessage("❌ Upload file gambar.", false); return; }
+            addMessage("📤 Memproses scan HD...", false);
             const reader = new FileReader();
             reader.onload = async (ev) => {
                 const img = new Image();
-                img.onload = async () => {
-                    const success = await processAndDownloadPDF(img);
-                    if (success) addMessageToDOM("✅ Scan sukses! PDF terunduh.", false);
-                    else addMessageToDOM("⚠️ Gagal, coba foto lebih terang.", false);
-                };
+                img.onload = async () => { const success = await processAndDownloadPDF(img); if (success) addMessage("✅ Scan sukses! PDF terunduh.", false); else addMessage("⚠️ Gagal, coba foto lebih terang.", false); };
                 img.src = ev.target.result;
             };
             reader.readAsDataURL(file);
             fileInput.value = '';
         });
         
-        // PWA Install
+        // ======================== PWA INSTALL ========================
         let deferredPrompt;
         window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; document.getElementById('installBtn').style.display = 'inline-block'; });
-        document.getElementById('installBtn').addEventListener('click', async () => { if(deferredPrompt) { deferredPrompt.prompt(); const { outcome } = await deferredPrompt.userChoice; deferredPrompt = null; document.getElementById('installBtn').style.display = 'none'; } });
+        document.getElementById('installBtn').addEventListener('click', async () => { if (deferredPrompt) { deferredPrompt.prompt(); deferredPrompt.userChoice.then(() => { deferredPrompt = null; document.getElementById('installBtn').style.display = 'none'; }); } });
         
-        // Modal handlers
+        // ======================== MODAL HANDLER ========================
         const historyBtn = document.getElementById('historyBtn');
         const historyModal = document.getElementById('historyModal');
         const closeHistoryModal = document.getElementById('closeHistoryModal');
         const deleteAllSessionsBtn = document.getElementById('deleteAllSessions');
         historyBtn.addEventListener('click', () => { renderSessionList(); historyModal.classList.remove('hidden'); });
-        closeHistoryModal.addEventListener('click', () => historyModal.classList.add('hidden'));
-        deleteAllSessionsBtn.addEventListener('click', () => { if(confirm('Hapus SEMUA riwayat percakapan?')) { deleteAllSessions(); renderSessionList(); } });
-        window.addEventListener('click', (e) => { if(e.target === historyModal) historyModal.classList.add('hidden'); });
+        closeHistoryModal.addEventListener('click', () => { historyModal.classList.add('hidden'); });
+        deleteAllSessionsBtn.addEventListener('click', () => { if (confirm('Hapus SEMUA riwayat?')) { deleteAllSessions(); renderSessionList(); } });
+        window.addEventListener('click', (e) => { if (e.target === historyModal) historyModal.classList.add('hidden'); });
         const newChatBtn = document.getElementById('newChatBtn');
-        newChatBtn.addEventListener('click', () => { if(confirm('Buat percakapan baru? Percakapan saat ini akan disimpan.')) newChat(); });
+        newChatBtn.addEventListener('click', () => { if (confirm('Buat chat baru?')) newChat(); });
         
         setTimeout(() => lucide.createIcons(), 200);
     </script>
-
+    
     <!-- Dynamic manifest & service worker -->
     <script>
         (function() {
-            const manifest = {
-                name: "JEDI AI Asisten", short_name: "JEDI AI", start_url: ".", display: "standalone", theme_color: "#a8d5c4", background_color: "#fdfaf6",
-                icons: [{ src: "https://i.ibb.co.com/6j3pj4S/pp-smkn.jpg", sizes: "192x192", type: "image/jpeg" }, { src: "https://i.ibb.co.com/6j3pj4S/pp-smkn.jpg", sizes: "512x512", type: "image/jpeg" }]
-            };
+            const manifest = { name: "JEDI AI Asisten", short_name: "JEDI AI", start_url: ".", display: "standalone", theme_color: "#a8d5c4", background_color: "#fdfaf6", icons: [ { src: "https://i.ibb.co.com/6j3pj4S/pp-smkn.jpg", sizes: "192x192", type: "image/jpeg" }, { src: "https://i.ibb.co.com/6j3pj4S/pp-smkn.jpg", sizes: "512x512", type: "image/jpeg" } ] };
             const blob = new Blob([JSON.stringify(manifest)], {type: 'application/json'});
             const url = URL.createObjectURL(blob);
             let link = document.querySelector('link[rel="manifest"]');
-            if(link) link.href = url;
-            if('serviceWorker' in navigator) {
-                const swCode = `self.addEventListener('fetch', e => e.respondWith(fetch(e.request)));`;
-                navigator.serviceWorker.register(URL.createObjectURL(new Blob([swCode], {type: 'application/javascript'}))).catch(console.log);
-            }
+            if (link) link.href = url;
+            if ('serviceWorker' in navigator) { const swCode = `self.addEventListener('fetch', e => e.respondWith(fetch(e.request)));`; const swBlob = new Blob([swCode], {type: 'application/javascript'}); navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(console.log); }
         })();
     </script>
 </body>
