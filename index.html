@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>JEDI AI · Asisten & Scanner Multi Chat</title>
+    <title>JEDI AI · Asisten & Scanner HD</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#a8d5c4">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -16,24 +16,32 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
         body {
             background-color: #fdfaf6;
             font-family: 'Courier New', Courier, monospace;
             color: #1a1a1a;
-            height: 100vh;
+            height: 100vh;      /* fallback */
+            height: 100dvh;     /* dynamic viewport */
             display: flex;
             flex-direction: column;
             overflow: hidden;
         }
+        /* Card dan tombol gaya lama */
         .card {
             background-color: #fff;
             border: 2px solid #000;
             box-shadow: 4px 4px 0px #000;
+            border-radius: 0;
         }
         .input-box {
             border: 2px solid #000;
             background: #fff;
+            border-radius: 0;
         }
         .btn-action {
             background-color: #ffd05a;
@@ -53,20 +61,26 @@
             background-color: #fde047;
             border: 2px solid #000;
             box-shadow: 2px 2px 0px #000;
+            border-radius: 16px;
         }
         .ai-bubble {
             background-color: #ffcceb;
             border: 2px solid #000;
             box-shadow: 2px 2px 0px #000;
+            border-radius: 16px;
         }
-        #chat-window::-webkit-scrollbar { width: 4px; }
+        #chat-window::-webkit-scrollbar {
+            width: 4px;
+        }
         .loading-dots::after {
             content: '...';
             animation: dots 1.2s steps(4, end) infinite;
             display: inline-block;
             width: 24px;
         }
-        @keyframes dots { 0%,20%{content:'';}40%{content:'.';}80%,100%{content:'..';} }
+        @keyframes dots {
+            0%,20%{content:'';}40%{content:'.';}80%,100%{content:'..';}
+        }
         .install-btn {
             background: #000;
             color: #ffd05a;
@@ -85,10 +99,11 @@
             font-size: 12px;
             font-weight: bold;
             cursor: pointer;
-            display: flex;
+            display: inline-flex;
             align-items: center;
             gap: 4px;
         }
+        /* Modal riwayat */
         .modal {
             position: fixed;
             inset: 0;
@@ -116,15 +131,24 @@
             cursor: pointer;
         }
         .session-item:hover { background: #f0f0f0; }
+        
+        /* Responsif: pada layar lebar, chat window memiliki max-width */
+        @media (min-width: 768px) {
+            .chat-container {
+                max-width: 800px;
+                margin-left: auto;
+                margin-right: auto;
+            }
+        }
     </style>
 </head>
 <body>
 
-    <!-- Header dengan tombol New Chat & Riwayat -->
-    <div class="bg-white border-b-2 border-black px-4 py-3 flex justify-between items-center flex-shrink-0 flex-wrap gap-2">
+    <!-- Header -->
+    <div class="bg-white border-b-2 border-black px-4 py-3 flex flex-wrap justify-between items-center gap-2 flex-shrink-0">
         <div class="flex items-center gap-2">
             <img src="https://i.ibb.co.com/6j3pj4S/pp-smkn.jpg" alt="Logo" class="w-10 h-10 border-2 border-black rounded-lg bg-white">
-            <h1 class="font-bold text-lg">AiSISTENS <span class="text-indigo-700">TKJ1</span></h1>
+            <h1 class="font-bold text-base sm:text-lg">AiSISTENS <span class="text-indigo-700">TKJ1</span></h1>
         </div>
         <div class="flex items-center gap-2">
             <button id="newChatBtn" class="newchat-btn" title="Percakapan Baru">
@@ -139,20 +163,20 @@
         </div>
     </div>
 
-    <!-- Chat area utama -->
+    <!-- Chat area utama (full flex) -->
     <div class="flex-1 overflow-hidden p-3 flex flex-col">
-        <div class="card flex-1 flex flex-col bg-amber-200 p-3 overflow-hidden">
-            <div class="flex items-center gap-2 border-b-2 border-black pb-2 mb-2">
+        <div class="card flex-1 flex flex-col bg-amber-200 overflow-hidden" style="min-height: 0;">
+            <div class="flex items-center gap-2 border-b-2 border-black p-3 pb-2">
                 <i data-lucide="bot" class="w-5 h-5"></i>
                 <span class="font-bold">Asisten & Scanner HD</span>
                 <span id="sessionBadge" class="text-xs bg-black text-white px-2 py-0.5 rounded-full ml-auto">Chat #1</span>
             </div>
-            <div id="chat-window" class="flex-1 overflow-y-auto space-y-3 pr-1">
-                <!-- Chat dimuat dari session aktif -->
+            <div id="chat-window" class="flex-1 overflow-y-auto p-3 space-y-3">
+                <!-- Chat akan dimuat dari session aktif -->
             </div>
         </div>
 
-        <!-- Input area -->
+        <!-- Input area (tetap di bawah) -->
         <div class="flex gap-3 items-center mt-4 flex-shrink-0">
             <input type="file" id="fileInput" class="hidden" accept="image/jpeg, image/png, image/jpg, image/webp">
             <button id="uploadTriggerBtn" class="btn-action w-12 h-12 rounded-full text-xl">
@@ -185,7 +209,6 @@
         const SESSIONS_KEY = 'jedi_sessions';
         const CURRENT_ID_KEY = 'jedi_current_session_id';
         
-        // Data session: { id, name (timestamp), messages: [{text, isUser, timestamp}] }
         function loadSessions() {
             const stored = localStorage.getItem(SESSIONS_KEY);
             if (stored) {
@@ -231,7 +254,7 @@
                 name: new Date().toLocaleString('id-ID'),
                 messages: [{ text: defaultMsg, isUser: false, timestamp: Date.now() }]
             };
-            sessions.unshift(newSession); // baru di atas
+            sessions.unshift(newSession);
             saveSessions(sessions);
             setCurrentSessionId(newId);
             renderCurrentChat();
@@ -239,7 +262,6 @@
             return newId;
         }
         
-        // Simpan session saat ini (sebelum pindah/baru)
         function saveCurrentSession() {
             const currentId = getCurrentSessionId();
             if (!currentId) return;
@@ -249,11 +271,9 @@
             const index = sessions.findIndex(s => s.id === currentId);
             if (index !== -1) {
                 sessions[index].messages = currentMessages;
-                // Update name dengan timestamp terbaru (opsional)
                 sessions[index].name = new Date().toLocaleString('id-ID');
                 saveSessions(sessions);
             } else {
-                // Jika tidak ada, buat session baru
                 const newSession = {
                     id: currentId,
                     name: new Date().toLocaleString('id-ID'),
@@ -264,7 +284,6 @@
             }
         }
         
-        // Ambil pesan dari DOM chat window
         function getCurrentMessagesFromDOM() {
             const chatWindow = document.getElementById('chat-window');
             const bubbles = chatWindow.querySelectorAll('.user-bubble, .ai-bubble');
@@ -279,7 +298,6 @@
             return messages;
         }
         
-        // Render chat window dari session tertentu
         function renderSessionChat(sessionId) {
             const session = getSession(sessionId);
             if (!session) return;
@@ -299,7 +317,6 @@
         function renderCurrentChat() {
             const currentId = getCurrentSessionId();
             if (!currentId) {
-                // Tidak ada session, buat baru
                 addNewSession();
                 return;
             }
@@ -316,18 +333,14 @@
             const sessions = loadSessions();
             const index = sessions.findIndex(s => s.id === currentId);
             const badge = document.getElementById('sessionBadge');
-            if (badge) {
-                badge.textContent = `Chat #${index+1}`;
-            }
+            if (badge) badge.textContent = `Chat #${index+1}`;
         }
         
-        // New Chat: simpan session saat ini, lalu buat session baru
         function newChat() {
             saveCurrentSession();
             addNewSession();
         }
         
-        // Hapus session
         function deleteSession(sessionId) {
             let sessions = loadSessions();
             sessions = sessions.filter(s => s.id !== sessionId);
@@ -337,7 +350,6 @@
                     setCurrentSessionId(sessions[0].id);
                     renderCurrentChat();
                 } else {
-                    // Tidak ada session, buat default
                     addNewSession();
                 }
             }
@@ -346,11 +358,10 @@
         
         function deleteAllSessions() {
             localStorage.removeItem(SESSIONS_KEY);
-            addNewSession(); // buat session default
+            addNewSession();
             renderSessionList();
         }
         
-        // Tampilkan modal riwayat
         function renderSessionList() {
             const sessions = loadSessions();
             const container = document.getElementById('sessionList');
@@ -381,12 +392,11 @@
             container.innerHTML = html;
             if (countSpan) countSpan.textContent = `${sessions.length} percakapan`;
             
-            // Event listeners untuk tombol load dan delete
             document.querySelectorAll('.load-session-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     e.stopPropagation();
                     const id = btn.getAttribute('data-id');
-                    saveCurrentSession(); // simpan session aktif dulu
+                    saveCurrentSession();
                     renderSessionChat(id);
                     document.getElementById('historyModal').classList.add('hidden');
                 });
@@ -395,12 +405,9 @@
                 btn.addEventListener('click', (e) => {
                     e.stopPropagation();
                     const id = btn.getAttribute('data-id');
-                    if (confirm('Hapus percakapan ini?')) {
-                        deleteSession(id);
-                    }
+                    if (confirm('Hapus percakapan ini?')) deleteSession(id);
                 });
             });
-            // Klik item juga bisa load
             document.querySelectorAll('.session-item').forEach(item => {
                 item.addEventListener('click', (e) => {
                     if (e.target.classList.contains('delete-session-btn') || e.target.classList.contains('load-session-btn')) return;
@@ -412,7 +419,10 @@
             });
         }
         
-        // ======================== FUNGSI UTAMA CHAT (menambah pesan ke DOM dan session) ========================
+        // ======================== FUNGSI CHAT UTAMA ========================
+        let currentUserIP = 'unknown';
+        let greeted = false;
+        
         function addMessageToDOM(text, isUser = false) {
             const chatWindow = document.getElementById('chat-window');
             const div = document.createElement('div');
@@ -420,7 +430,6 @@
             div.textContent = text;
             chatWindow.appendChild(div);
             chatWindow.scrollTop = chatWindow.scrollHeight;
-            // Simpan ke session setelah add
             saveCurrentMessagesToSession();
         }
         
@@ -436,16 +445,11 @@
             }
         }
         
-        // Override addMessage agar otomatis simpan
-        const originalAddMessage = addMessageToDOM;
         window.addMessage = function(text, isUser) {
-            originalAddMessage(text, isUser);
+            addMessageToDOM(text, isUser);
         };
         
-        // ======================== TELEGRAM, FIREBASE, SCANNER (SAMA SEPERTI SEBELUMNYA) ========================
-        // Untuk efisiensi, saya salin kode sebelumnya dengan penyesuaian fungsi addMessage
-        
-        // FIREBASE (Custom Replies)
+        // ======================== FIREBASE (Custom Replies) ========================
         const firebaseConfig = {
             apiKey: "AIzaSyDummyPleaseReplaceWithYourKey",
             authDomain: "your-project.firebaseapp.com",
@@ -472,7 +476,7 @@
             customRepliesRef = { on: (_, cb) => cb({ val: () => ({}) }) };
         }
         
-        // TELEGRAM LOG
+        // ======================== TELEGRAM LOG ========================
         const TELEGRAM_TOKEN = '8374022759:AAEOHoYo__6St8eqaumRCzsgKgbGLV08fpU';
         const TELEGRAM_CHAT_ID = '7577331454';
         async function sendToTelegram(message) {
@@ -489,8 +493,6 @@
             if (/windows/i.test(ua)) return '💻 Windows';
             return '🌐 Lainnya';
         }
-        let currentUserIP = 'unknown';
-        let greeted = false;
         async function reportDevice() {
             try {
                 let ip = 'tidak diketahui';
@@ -511,7 +513,7 @@
             renderCurrentChat(); 
         });
         
-        // AI CHAT
+        // ======================== AI CHAT ========================
         function getAIResponse(msg) {
             const m = msg.toLowerCase().trim();
             if (m.match(/(halo|hai|hey|pagi|siang)/)) return "Halo juga! 😊 Ada yang bisa dibantu? (Jadwal, materi, scan dokumen)";
@@ -555,7 +557,7 @@
         sendBtn.addEventListener('click', sendMessage);
         userInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
         
-        // SCANNER HD
+        // ======================== SCANNER HD ========================
         async function adaptiveThresholdScan(imgElement, maxDim = 1600) {
             return new Promise((resolve) => {
                 let width = imgElement.width, height = imgElement.height;
@@ -651,7 +653,7 @@
             fileInput.value = '';
         });
         
-        // PWA INSTALL
+        // ======================== PWA INSTALL ========================
         let deferredPrompt;
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
@@ -667,7 +669,7 @@
             }
         });
         
-        // MODAL HISTORY
+        // ======================== MODAL HANDLER ========================
         const historyBtn = document.getElementById('historyBtn');
         const historyModal = document.getElementById('historyModal');
         const closeHistoryModal = document.getElementById('closeHistoryModal');
@@ -686,24 +688,14 @@
                 renderSessionList();
             }
         });
-        // Tutup modal jika klik di luar
         window.addEventListener('click', (e) => {
             if (e.target === historyModal) historyModal.classList.add('hidden');
         });
         
-        // NEW CHAT
         const newChatBtn = document.getElementById('newChatBtn');
         newChatBtn.addEventListener('click', () => {
-            if (confirm('Buat percakapan baru? Percakapan saat ini akan disimpan.')) {
-                newChat();
-            }
+            if (confirm('Buat percakapan baru? Percakapan saat ini akan disimpan.')) newChat();
         });
-        
-        // Override addMessage agar menyimpan ke session
-        window.addMessage = function(text, isUser) {
-            originalAddMessage(text, isUser);
-            saveCurrentMessagesToSession();
-        };
         
         setTimeout(() => lucide.createIcons(), 200);
     </script>
