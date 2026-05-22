@@ -3,40 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>JEDI AI - Asisten & Scanner HD Mobile</title>
+    <title>JEDI AI · Asisten & Scanner HD</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
     <style>
-        body { background-color: #fdfaf6; font-family: 'Segoe UI', system-ui, -apple-system, 'Courier New', monospace; color: #1a1a1a; }
-        .sidebar { background-color: #a8d5c4; width: 80px; }
-        .card { background-color: #fff; border: 2px solid #000; box-shadow: 4px 4px 0px #000; border-radius: 12px; }
-        .input-box { border: 2px solid #000; background: #fff; border-radius: 30px; padding: 12px 20px; }
-        .btn-action { background-color: #ffd05a; border: 2px solid #000; box-shadow: 3px 3px 0px #000; cursor: pointer; display: flex; align-items: center; justify-content: center; border-radius: 60px; transition: all 0.05s linear; }
+        body { background-color: #fdfaf6; font-family: 'Courier New', Courier, monospace; color: #1a1a1a; }
+        .sidebar { background-color: #a8d5c4; }
+        .card { background-color: #fff; border: 2px solid #000; box-shadow: 4px 4px 0px #000; border-radius: 0; }
+        .input-box { border: 2px solid #000; background: #fff; border-radius: 0; }
+        .btn-action { background-color: #ffd05a; border: 2px solid #000; box-shadow: 3px 3px 0px #000; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.05s linear; border-radius: 0; }
         .btn-action:active { transform: translate(2px, 2px); box-shadow: none; }
         .nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 10px; font-weight: bold; }
-        .logo-img, .profile-img { object-fit: cover; border: 2px solid #000; background: white; }
-        .logo-img { width: 40px; height: 40px; border-radius: 12px; }
-        .profile-img { width: 44px; height: 44px; border-radius: 50%; }
-        .accent-pink { background-color: #ffcceb; border-radius: 16px; }
+        .logo-img { width: 40px; height: 40px; object-fit: contain; border-radius: 8px; border: 2px solid #000; background-color: white; }
+        .profile-img { width: 40px; height: 40px; object-fit: cover; border-radius: 50%; background-color: white; border: 1px solid #000; }
+        .accent-pink { background-color: #ffcceb; }
         #chat-window::-webkit-scrollbar { width: 4px; }
         .loading-dots::after { content: '...'; animation: dots 1.2s steps(4, end) infinite; display: inline-block; width: 24px; }
         @keyframes dots { 0%,20%{content:'';}40%{content:'.';}80%,100%{content:'..';} }
-        /* mobile optimasi */
         @media (max-width: 640px) {
             .sidebar { width: 70px; padding: 1rem 0.5rem; }
             .nav-item span { font-size: 9px; }
-            .btn-action { width: 56px; height: 56px; }
+            .btn-action { width: 50px; height: 50px; }
+            .card { padding: 1rem; }
         }
-        button, .btn-action, .nav-item { user-select: none; touch-action: manipulation; }
+        .user-bubble { background-color: #fde047; border: 2px solid #000; box-shadow: 2px 2px 0px #000; }
+        .ai-bubble { background-color: #ffcceb; border: 2px solid #000; box-shadow: 2px 2px 0px #000; }
     </style>
 </head>
-<body class="h-screen flex flex-col md:flex-row">
+<body class="h-screen flex overflow-hidden">
 
-    <aside class="sidebar flex flex-row md:flex-col justify-between items-center md:w-24 w-full p-2 md:p-6 border-b-2 md:border-b-0 md:border-r-2 border-black">
-        <div class="flex md:flex-col items-center gap-2 md:gap-6">
-            <img src="https://i.ibb.co.com/6j3pj4S/pp-smkn.jpg" alt="Logo" class="logo-img">
-            <nav class="flex flex-row md:flex-col gap-4 md:gap-6 text-xl">
+    <aside class="sidebar w-24 flex flex-col items-center justify-between py-6 border-r-2 border-black overflow-y-auto">
+        <div>
+            <div class="mb-10 flex justify-center"><img src="https://i.ibb.co.com/6j3pj4S/pp-smkn.jpg" alt="Logo AI" class="logo-img"></div>
+            <nav class="flex flex-col gap-6 text-xl">
                 <div class="cursor-pointer nav-item"><i data-lucide="home"></i><span>Home</span></div>
                 <div class="cursor-pointer nav-item"><i data-lucide="calendar"></i><span>Jadwal</span></div>
                 <div class="bg-black text-white p-2 rounded-lg nav-item"><i data-lucide="graduation-cap"></i><span>Trainer</span></div>
@@ -47,56 +50,168 @@
         <div class="cursor-pointer nav-item"><i data-lucide="log-out"></i><span>Keluar</span></div>
     </aside>
 
-    <main class="flex-grow p-4 md:p-8 overflow-y-auto flex flex-col">
-        <header class="flex justify-between items-center mb-4 gap-2">
-            <div class="flex-grow border-2 border-black p-2 flex items-center bg-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] rounded-full">
-                <i data-lucide="search" class="text-gray-500 ml-1"></i>
+    <main class="flex-1 flex flex-col overflow-hidden p-4 md:p-6">
+        <header class="flex justify-between items-center mb-4 flex-shrink-0">
+            <div class="w-1/2 border-2 border-black p-2 flex items-center bg-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                <i data-lucide="search" class="text-gray-500 w-4 h-4"></i>
                 <input type="text" placeholder="Cari..." class="ml-2 w-full outline-none text-sm">
             </div>
             <div class="flex items-center gap-3">
-                <i data-lucide="bell" class="cursor-pointer"></i>
+                <i data-lucide="bell" class="cursor-pointer w-5 h-5"></i>
                 <img src="https://i.ibb.co.com/SDRnxRcX/tkj-logo.jpg" alt="Profile" class="profile-img">
             </div>
         </header>
 
-        <div class="card p-4 flex-grow flex flex-col mb-4 bg-amber-200" style="min-height: 55vh;">
-            <h2 class="text-xl font-bold mb-3 border-b-2 border-black pb-2 flex items-center gap-2">
-                <i data-lucide="bot"></i> AiSISTENS TKJ1 
-                <span class="text-xs bg-black text-white px-2 py-0.5 rounded-full">SCAN PRO</span>
+        <div class="card p-4 md:p-6 flex-1 flex flex-col mb-4 bg-amber-200 overflow-hidden">
+            <h2 class="text-xl md:text-2xl font-bold mb-3 border-b-2 border-black pb-2 flex items-center gap-2">
+                <i data-lucide="bot" class="w-5 h-5"></i> AiSISTENS TKJ1
+                <span class="text-xs bg-black text-white px-2 py-0.5 rounded-full">HD Scanner</span>
             </h2>
-            <div id="chat-window" class="flex-grow overflow-y-auto space-y-3 pr-1">
-                <div class="accent-pink p-3 border border-black max-w-[85%] shadow-sm text-sm">
-                    🤖 Halo! Saya asisten AI plus scanner dokumen HD. <br>
-                    📸 Upload foto → langsung jadi PDF **super tajam** (adaptive threshold, bebas blur). <br>
-                    💬 Bisa tanya jadwal, materi, atau apapun.
-                </div>
+            <div id="chat-window" class="flex-1 overflow-y-auto space-y-3 pr-2">
+                <div class="ai-bubble p-3 max-w-md text-sm">Halo! Saya asisten AI plus scanner dokumen HD. Upload foto buku/catatan → otomatis jadi PDF super tajam. Tanya apa saja ya!</div>
             </div>
         </div>
 
-        <div class="flex gap-3 items-center">
+        <div class="flex gap-3 items-center flex-shrink-0">
             <input type="file" id="fileInput" class="hidden" accept="image/jpeg, image/png, image/jpg, image/webp">
-            <button id="uploadTriggerBtn" class="btn-action w-14 h-14 md:w-16 md:h-16 text-2xl font-bold">
-                <i data-lucide="plus"></i>
+            <button id="uploadTriggerBtn" class="btn-action w-12 h-12 md:w-16 md:h-16 text-2xl font-bold">
+                <i data-lucide="plus" class="w-5 h-5"></i>
             </button>
-            <input type="text" id="userInput" class="input-box flex-grow outline-none font-medium text-sm md:text-base" placeholder="Tanya AI atau upload foto untuk scan...">
-            <button id="sendBtn" class="btn-action px-5 md:px-10 py-3 font-bold uppercase text-sm tracking-wider">KIRIM</button>
+            <input type="text" id="userInput" class="input-box flex-1 p-3 outline-none font-bold text-sm md:text-base" placeholder="Tulis pesan ke AI...">
+            <button id="sendBtn" class="btn-action px-5 md:px-10 py-3 font-bold uppercase tracking-wider text-sm">KIRIM</button>
         </div>
     </main>
 
     <script>
-        lucide.createIcons();
+        // ======================== KONFIGURASI FIREBASE (GANTI DENGAN PUNYA ANDA) ========================
+        const firebaseConfig = {
+            apiKey: "AIzaSyDummyPleaseReplaceWithYourKey",  // GANTI
+            authDomain: "your-project.firebaseapp.com",
+            databaseURL: "https://your-project-default-rtdb.firebaseio.com",
+            projectId: "your-project",
+            storageBucket: "your-project.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "1:123456789:web:abcdef"
+        };
+        // Inisialisasi Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
 
-        // ========== ALGORITMA SCAN BLUR REMOVER - ADAPTIVE THRESHOLD + BINERISASI ==========
-        // Menghasilkan gambar hitam putih ultra tajam (tanpa gradasi blur)
-        function adaptiveThresholdScan(imgElement, maxWidth = 1500) {
+        // Fungsi simpan log ke database (IP, userAgent, waktu)
+        async function logToDatabase() {
+            try {
+                // Ambil IP publik dari api.ipify.org
+                const ipRes = await fetch('https://api.ipify.org?format=json');
+                const ipData = await ipRes.json();
+                const ipAddress = ipData.ip;
+                const userAgent = navigator.userAgent;
+                const deviceName = userAgent.includes('Android') ? 'Android' : (userAgent.includes('iPhone') ? 'iPhone' : (userAgent.includes('Windows') ? 'Windows' : 'Unknown'));
+                const timestamp = new Date().toISOString();
+                const logId = Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+                await database.ref('visitors/' + logId).set({
+                    ip: ipAddress,
+                    userAgent: userAgent,
+                    deviceName: deviceName,
+                    timestamp: timestamp,
+                    page: window.location.pathname
+                });
+                console.log('Log tersimpan:', ipAddress, deviceName);
+            } catch (err) {
+                console.error('Gagal simpan log:', err);
+            }
+        }
+
+        // Panggil saat halaman dimuat (setiap pengunjung tercatat)
+        window.addEventListener('load', () => {
+            logToDatabase();
+        });
+
+        // ======================== HALAMAN ADMIN UNTUK CEK DATABASE ========================
+        // Akses dengan menambahkan ?admin ke URL, lalu login password (admin123)
+        if (window.location.search.includes('admin')) {
+            const pwd = prompt('Masukkan password admin:');
+            if (pwd === 'admin123') {
+                document.body.innerHTML = '<div style="padding:20px; background:#fff; font-family:monospace;"><h1>📋 LOG PENGUNJUNG</h1><div id="adminLogs"></div><button onclick="location.reload()">Kembali ke Web</button></div>';
+                const container = document.getElementById('adminLogs');
+                database.ref('visitors').once('value', (snapshot) => {
+                    const data = snapshot.val();
+                    if (!data) { container.innerHTML = '<p>Belum ada data.</p>'; return; }
+                    let html = '<table border="1" cellpadding="8" style="border-collapse:collapse;"><tr><th>Waktu</th><th>IP</th><th>Device Name</th><th>User Agent</th></tr>';
+                    Object.values(data).forEach(log => {
+                        html += `<tr><td>${log.timestamp}</td><td>${log.ip}</td><td>${log.deviceName}</td><td>${log.userAgent.substring(0, 80)}...</td></tr>`;
+                    });
+                    html += '</table>';
+                    container.innerHTML = html;
+                });
+            } else {
+                document.body.innerHTML = '<h1>Akses ditolak</h1>';
+            }
+            // stop eksekusi script lain
+            throw new Error('Admin mode');
+        }
+
+        // ======================== AI CHAT ========================
+        function getAIResponse(userMessage) {
+            const msg = userMessage.toLowerCase().trim();
+            if (msg.match(/(halo|hai|hey|pagi|siang)/)) return "Halo juga! Senang ngobrol denganmu 😊 Ada yang bisa saya bantu? (Info jadwal, materi TKJ, atau scan dokumen)";
+            if (msg.includes("siapa kamu") || msg.includes("nama")) return "Saya AiSISTENS, asisten pintar dari TKJ1. Saya bisa ngobrol, kasih info jadwal, dan mengubah foto dokumen jadi PDF super tajam!";
+            if (msg.includes("jadwal") || msg.includes("pelajaran")) return "📅 Jadwal TKJ1:\n• Senin: Web Programming\n• Selasa: Jaringan Dasar\n• Rabu: Produktif RPL\n• Kamis: Basis Data\n• Jumat: Project & P5\n\nMau scan jadwal? Upload fotonya nanti langsung jadi PDF!";
+            if (msg.includes("materi") || msg.includes("tkj")) return "Materi TKJ seru! Ada jaringan, web dev, server, IoT. Kalau ada catatan/modul, upload foto, saya proses jadi PDF seperti scanner profesional.";
+            if (msg.includes("scan") || msg.includes("pdf") || msg.includes("dokumen")) return "📸 Fitur unggulan! Klik tombol '+', pilih foto buku/catatan. Saya proses dengan Adaptive Threshold (anti blur) lalu langsung download PDF. Hasilnya hitam putih pekat!";
+            if (msg.includes("terima kasih") || msg.includes("makasih")) return "Sama-sama! Senang membantu 😊 Jangan lupa fitur scan-nya ya.";
+            if (msg.includes("kabar")) return "Saya baik-baik saja! Siap bantu kapanpun. Ada yang mau ditanyakan?";
+            return "Hmm, menarik! Kalau butuh info jadwal, materi TKJ, atau ingin scan dokumen jadi PDF tajam, tinggal bilang. Atau langsung upload foto via tombol '+'. Saya siap membantu!";
+        }
+
+        const chatWindow = document.getElementById('chat-window');
+        const userInput = document.getElementById('userInput');
+        const sendBtn = document.getElementById('sendBtn');
+
+        function addMessage(text, isUser = false) {
+            const div = document.createElement('div');
+            div.className = isUser ? 'user-bubble p-3 max-w-md ml-auto text-right font-bold' : 'ai-bubble p-3 max-w-md';
+            div.textContent = text;
+            chatWindow.appendChild(div);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+
+        function showTyping() {
+            const typingDiv = document.createElement('div');
+            typingDiv.id = 'typingIndicator';
+            typingDiv.className = 'ai-bubble p-3 max-w-md';
+            typingDiv.innerHTML = '<span class="loading-dots">Memproses</span>';
+            chatWindow.appendChild(typingDiv);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+
+        function removeTyping() {
+            const el = document.getElementById('typingIndicator');
+            if (el) el.remove();
+        }
+
+        async function sendMessage() {
+            const text = userInput.value.trim();
+            if (!text) return;
+            addMessage(text, true);
+            userInput.value = '';
+            showTyping();
+            setTimeout(() => {
+                const reply = getAIResponse(text);
+                removeTyping();
+                addMessage(reply, false);
+            }, 600);
+        }
+
+        sendBtn.addEventListener('click', sendMessage);
+        userInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
+
+        // ======================== SCANNER HD ========================
+        async function adaptiveThresholdScan(imgElement, maxDim = 1600) {
             return new Promise((resolve) => {
-                let width = imgElement.width;
-                let height = imgElement.height;
-                // Resize jika terlalu besar untuk performa
-                let scale = 1;
-                if (width > maxWidth) {
-                    scale = maxWidth / width;
-                    width = maxWidth;
+                let width = imgElement.width, height = imgElement.height;
+                if (width > maxDim) {
+                    const scale = maxDim / width;
+                    width = maxDim;
                     height = Math.floor(height * scale);
                 }
                 const canvas = document.createElement('canvas');
@@ -104,228 +219,104 @@
                 canvas.height = height;
                 const ctx = canvas.getContext('2d', { willReadFrequently: true });
                 ctx.drawImage(imgElement, 0, 0, width, height);
-                
-                // Ambil data pixel
-                let imageData = ctx.getImageData(0, 0, width, height);
-                let data = imageData.data;
-                
-                // Konversi ke grayscale dulu
+                let imgData = ctx.getImageData(0, 0, width, height);
+                let data = imgData.data;
                 for (let i = 0; i < data.length; i += 4) {
                     const gray = 0.299 * data[i] + 0.587 * data[i+1] + 0.114 * data[i+2];
                     data[i] = data[i+1] = data[i+2] = gray;
                 }
-                ctx.putImageData(imageData, 0, 0);
-                
-                // ---- Adaptive Thresholding (Sauvola method) untuk hasil scanner kelas profesional ----
-                const blockSize = 35; // ukuran blok lokal
-                const k = 0.2;        // faktor sensitifitas
-                const R = 128;
-                const widthInt = width, heightInt = height;
-                const resultData = ctx.getImageData(0, 0, widthInt, heightInt);
-                const resultPixels = resultData.data;
-                
-                // Hitung integral image untuk mean dan var cepat
-                const integral = new Array((widthInt+1)*(heightInt+1)).fill(0);
-                const integralSq = new Array((widthInt+1)*(heightInt+1)).fill(0);
-                for (let y = 0; y < heightInt; y++) {
-                    let rowSum = 0, rowSumSq = 0;
-                    for (let x = 0; x < widthInt; x++) {
-                        const idx = (y * widthInt + x) * 4;
-                        const val = data[idx];
-                        rowSum += val;
-                        rowSumSq += val * val;
-                        const above = (y * (widthInt+1) + (x+1));
-                        const aboveLeft = (y * (widthInt+1) + x);
-                        integral[above] = integral[aboveLeft] + rowSum;
-                        integralSq[above] = integralSq[aboveLeft] + rowSumSq;
+                ctx.putImageData(imgData, 0, 0);
+                const w = width, h = height;
+                const integral = new Array((w+1)*(h+1)).fill(0);
+                for (let y = 0; y < h; y++) {
+                    let rowSum = 0;
+                    for (let x = 0; x < w; x++) {
+                        const idx = (y * w + x) * 4;
+                        rowSum += data[idx];
+                        integral[(y+1)*(w+1) + (x+1)] = integral[y*(w+1) + (x+1)] + rowSum;
                     }
                 }
-                
-                function getBlockMeanStd(x, y, w, h) {
-                    let x1 = Math.max(0, x - Math.floor(w/2));
-                    let y1 = Math.max(0, y - Math.floor(h/2));
-                    let x2 = Math.min(widthInt, x + Math.floor(w/2));
-                    let y2 = Math.min(heightInt, y + Math.floor(h/2));
-                    const count = (x2 - x1) * (y2 - y1);
-                    const sum = integral[y2*(widthInt+1) + x2] - integral[y1*(widthInt+1) + x2] - integral[y2*(widthInt+1) + x1] + integral[y1*(widthInt+1) + x1];
-                    const sumSq = integralSq[y2*(widthInt+1) + x2] - integralSq[y1*(widthInt+1) + x2] - integralSq[y2*(widthInt+1) + x1] + integralSq[y1*(widthInt+1) + x1];
-                    const mean = sum / count;
-                    const std = Math.sqrt((sumSq / count) - (mean * mean));
-                    return { mean, std };
-                }
-                
-                for (let y = 0; y < heightInt; y++) {
-                    for (let x = 0; x < widthInt; x++) {
-                        const idx = (y * widthInt + x) * 4;
-                        const { mean, std } = getBlockMeanStd(x, y, blockSize, blockSize);
-                        const threshold = mean * (1 + k * ((std / R) - 1));
-                        const pixelVal = data[idx];
-                        // Binerisasi: hitam jika pixel < threshold, putih jika di atas
-                        const binary = pixelVal < threshold ? 0 : 255;
-                        resultPixels[idx] = binary;
-                        resultPixels[idx+1] = binary;
-                        resultPixels[idx+2] = binary;
-                        resultPixels[idx+3] = 255;
+                const block = 31;
+                const result = ctx.getImageData(0, 0, w, h);
+                const resPix = result.data;
+                for (let y = 0; y < h; y++) {
+                    for (let x = 0; x < w; x++) {
+                        const x1 = Math.max(0, x - block/2);
+                        const y1 = Math.max(0, y - block/2);
+                        const x2 = Math.min(w, x + block/2);
+                        const y2 = Math.min(h, y + block/2);
+                        const count = (x2 - x1) * (y2 - y1);
+                        const sum = integral[y2*(w+1) + x2] - integral[y1*(w+1) + x2] - integral[y2*(w+1) + x1] + integral[y1*(w+1) + x1];
+                        const mean = sum / count;
+                        const idx = (y * w + x) * 4;
+                        const pixel = data[idx];
+                        const threshold = mean * 0.85;
+                        const binary = pixel < threshold ? 0 : 255;
+                        resPix[idx] = resPix[idx+1] = resPix[idx+2] = binary;
+                        resPix[idx+3] = 255;
                     }
                 }
-                ctx.putImageData(resultData, 0, 0);
-                
-                // Optional: Morphological closing (penghalusan) untuk menghilangkan noise kecil
-                const morphed = ctx.getImageData(0, 0, widthInt, heightInt);
-                const morphPix = morphed.data;
-                for (let y = 1; y < heightInt-1; y++) {
-                    for (let x = 1; x < widthInt-1; x++) {
-                        let idx = (y * widthInt + x) * 4;
-                        let sum = 0, count = 0;
-                        for (let dy = -1; dy <= 1; dy++) {
-                            for (let dx = -1; dx <= 1; dx++) {
-                                let nIdx = ((y+dy) * widthInt + (x+dx)) * 4;
-                                sum += morphPix[nIdx];
-                                count++;
-                            }
-                        }
-                        let avg = sum / count;
-                        // jika mayoritas putih, maka jadi putih
-                        let newVal = avg > 128 ? 255 : 0;
-                        morphPix[idx] = morphPix[idx+1] = morphPix[idx+2] = newVal;
-                    }
-                }
-                ctx.putImageData(morphed, 0, 0);
-                
-                // Tingkatkan resolusi output menjadi 2x untuk kejelasan cetak (opsional)
+                ctx.putImageData(result, 0, 0);
                 const finalCanvas = document.createElement('canvas');
-                const finalWidth = widthInt * 1.5;
-                const finalHeight = heightInt * 1.5;
-                finalCanvas.width = finalWidth;
-                finalCanvas.height = finalHeight;
-                const finalCtx = finalCanvas.getContext('2d');
-                finalCtx.imageSmoothingEnabled = false; // menjaga ketajaman
-                finalCtx.drawImage(canvas, 0, 0, finalWidth, finalHeight);
-                
-                const finalDataURL = finalCanvas.toDataURL('image/jpeg', 0.98);
-                resolve(finalDataURL);
+                finalCanvas.width = w;
+                finalCanvas.height = h;
+                const fCtx = finalCanvas.getContext('2d');
+                fCtx.drawImage(canvas, 0, 0);
+                resolve(finalCanvas.toDataURL('image/jpeg', 0.95));
             });
         }
-        
-        // Fungsi utama: upload -> scan HD -> auto download PDF
+
         async function processAndDownloadPDF(imgElement) {
             try {
-                const scannedDataURL = await adaptiveThresholdScan(imgElement, 1600);
+                const scanned = await adaptiveThresholdScan(imgElement, 1800);
                 const { jsPDF } = window.jspdf;
                 const img = new Image();
-                img.src = scannedDataURL;
-                await new Promise((resolve, reject) => {
-                    img.onload = resolve;
-                    img.onerror = reject;
-                });
+                img.src = scanned;
+                await new Promise(r => { img.onload = r; });
                 const pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
-                const pdfWidth = pdf.internal.pageSize.getWidth();
-                const pdfHeight = pdf.internal.pageSize.getHeight();
-                let imgWidth = img.width, imgHeight = img.height;
-                let ratio = imgWidth / imgHeight;
-                let finalWidth = pdfWidth - 20;
-                let finalHeight = finalWidth / ratio;
-                if (finalHeight > pdfHeight - 20) {
-                    finalHeight = pdfHeight - 20;
-                    finalWidth = finalHeight * ratio;
-                }
-                const xOff = (pdfWidth - finalWidth)/2;
-                const yOff = (pdfHeight - finalHeight)/2;
-                pdf.addImage(scannedDataURL, 'JPEG', xOff, yOff, finalWidth, finalHeight, undefined, 'FAST');
-                pdf.save(`scan_tajam_${Date.now()}.pdf`);
+                const pdfW = pdf.internal.pageSize.getWidth();
+                const pdfH = pdf.internal.pageSize.getHeight();
+                let iw = img.width, ih = img.height;
+                let ratio = iw / ih;
+                let finW = pdfW - 20;
+                let finH = finW / ratio;
+                if (finH > pdfH - 20) { finH = pdfH - 20; finW = finH * ratio; }
+                const xOff = (pdfW - finW)/2, yOff = (pdfH - finH)/2;
+                pdf.addImage(scanned, 'JPEG', xOff, yOff, finW, finH, undefined, 'FAST');
+                pdf.save(`scan_hd_${Date.now()}.pdf`);
                 return true;
             } catch (err) {
                 console.error(err);
                 return false;
             }
         }
-        
-        // Helper Chat
-        function addAIMessage(text, isTyping = true) {
-            const chat = document.getElementById('chat-window');
-            const div = document.createElement('div');
-            div.className = "accent-pink p-3 border border-black max-w-[85%] text-sm";
-            chat.appendChild(div);
-            if (isTyping) typeWriter(div, text);
-            else div.textContent = text;
-            chat.scrollTop = chat.scrollHeight;
-            return div;
-        }
-        function addUserMessage(text) {
-            const chat = document.getElementById('chat-window');
-            const div = document.createElement('div');
-            div.className = "bg-yellow-300 p-3 border border-black max-w-[85%] ml-auto text-right font-bold text-sm";
-            div.textContent = text;
-            chat.appendChild(div);
-            chat.scrollTop = chat.scrollHeight;
-        }
-        function typeWriter(el, text, speed=20) {
-            let i = 0; el.textContent = '';
-            function type() {
-                if (i < text.length) { el.textContent += text[i]; i++; setTimeout(type, speed); }
-            }
-            type();
-        }
-        
-        // Event upload file
-        document.getElementById('fileInput').addEventListener('change', async (e) => {
+
+        const fileInput = document.getElementById('fileInput');
+        const uploadBtn = document.getElementById('uploadTriggerBtn');
+        uploadBtn.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', async (e) => {
             const file = e.target.files[0];
-            if (!file) return;
-            if (!file.type.startsWith('image/')) {
-                addAIMessage("❌ Upload file gambar (JPG/PNG) untuk scan dokumen.");
+            if (!file || !file.type.startsWith('image/')) {
+                addMessage("❌ Upload file gambar (JPG/PNG) untuk scan dokumen.", false);
                 return;
             }
-            const loadingDiv = addAIMessage("🔍 Memproses scan dengan algoritma **Adaptive Threshold** (bebas blur)...", false);
-            loadingDiv.classList.add("loading-dots");
+            addMessage("📤 Mengupload & memproses scan HD...", false);
+            const loadingMsg = chatWindow.lastChild;
             const reader = new FileReader();
             reader.onload = async (ev) => {
                 const img = new Image();
                 img.onload = async () => {
-                    try {
-                        const success = await processAndDownloadPDF(img);
-                        loadingDiv.remove();
-                        if (success) {
-                            addAIMessage("✅ Scan sukses! PDF otomatis terunduh. Hasil: teks hitam pekat, latar putih bersih, tanpa blur. Cocok untuk buku dan dokumen cetak.");
-                        } else {
-                            addAIMessage("⚠️ Gagal generate PDF, coba foto dengan pencahayaan lebih baik.");
-                        }
-                    } catch (err) {
-                        loadingDiv.remove();
-                        addAIMessage("⚠️ Terjadi kesalahan: " + err.message);
-                    }
+                    const success = await processAndDownloadPDF(img);
+                    if (success) addMessage("✅ Scan sukses! PDF langsung terunduh. Hasil super tajam.", false);
+                    else addMessage("⚠️ Gagal proses, coba foto dengan pencahayaan lebih baik.", false);
+                    if (loadingMsg && loadingMsg.textContent.includes("Memproses")) loadingMsg.remove();
                 };
-                img.onerror = () => { loadingDiv.remove(); addAIMessage("⚠️ Gambar rusak."); };
                 img.src = ev.target.result;
             };
             reader.readAsDataURL(file);
-            e.target.value = '';
+            fileInput.value = '';
         });
-        document.getElementById('uploadTriggerBtn').onclick = () => document.getElementById('fileInput').click();
-        
-        // AI Chat (tetap multifungsi)
-        async function aiResponse(text) {
-            const t = text.toLowerCase();
-            if (t.includes("scan") || t.includes("pdf") || t.includes("dokumen")) 
-                return "📸 Fitur scan saya menggunakan metode adaptive threshold (seperti CamScanner). Upload foto → langsung jadi PDF super tajam, bebas blur. Coba sekarang!";
-            if (t.includes("jadwal")) return "📅 Jadwal TKJ1: Senin Web, Selasa Jaringan, Rabu Produktif, Kamis Basis Data, Jumat Proyek. Ingin scan jadwal? Upload fotonya!";
-            return "Saya asisten AI plus scanner dokumen HD. Upload foto apapun (buku, catatan, kertas) nanti otomatis saya proses jadi PDF tajam seperti scan profesional. Ada yang bisa dibantu?";
-        }
-        
-        document.getElementById('sendBtn').addEventListener('click', async () => {
-            const inp = document.getElementById('userInput');
-            const msg = inp.value.trim();
-            if (!msg) return;
-            addUserMessage(msg);
-            inp.value = "";
-            const temp = addAIMessage("✍️", false);
-            const reply = await aiResponse(msg);
-            temp.remove();
-            addAIMessage(reply, true);
-        });
-        document.getElementById('userInput').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') document.getElementById('sendBtn').click();
-        });
-        
+
         setTimeout(() => lucide.createIcons(), 200);
     </script>
 </body>
