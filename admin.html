@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Admin — Absensi MPP</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{
+  background:#0a1a12;
+  color:#F1EFE6;
+  font-family:'Inter',sans-serif;
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+}
+.container{
+  max-width:700px;
+  width:100%;
+  background:rgba(18,51,36,0.65);
+  backdrop-filter:blur(20px);
+  border:1px solid rgba(212,175,55,0.12);
+  border-radius:24px;
+  padding:30px;
+  box-shadow:0 25px 60px -20px rgba(0,0,0,0.7);
+}
+h1{ font-size:24px; color:#EAD07E; margin-bottom:4px; }
+.sub{ color:#9FB3A8; font-size:13px; margin-bottom:24px; }
+.card{
+  background:rgba(0,0,0,0.2);
+  border-radius:14px;
+  padding:16px 18px;
+  margin-bottom:12px;
+  border:1px solid rgba(212,175,55,0.06);
+}
+.card .row{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+}
+.card .nama{ font-weight:600; }
+.card .jam{ color:#9FB3A8; font-size:13px; }
+.btn{
+  border:none;
+  padding:6px 16px;
+  border-radius:100px;
+  font-weight:600;
+  font-size:12px;
+  cursor:pointer;
+  transition:all .15s ease;
+}
+.btn:active{ transform:scale(.95); }
+.btn-confirm{
+  background:linear-gradient(135deg, #EAD07E, #D4AF37);
+  color:#0a1a12;
+}
+.btn-confirm:hover{ opacity:0.8; }
+.btn-confirm:disabled{ opacity:0.4; cursor:not-allowed; }
+.btn-logout{
+  background:rgba(255,255,255,0.06);
+  color:#9FB3A8;
+  border:1px solid rgba(212,175,55,0.1);
+}
+.btn-logout:hover{ border-color:rgba(212,175,55,0.3); }
+.empty{ text-align:center; color:#6E8478; padding:30px 0; }
+.login-form{ text-align:center; }
+.login-form input{
+  width:100%;
+  padding:14px;
+  border-radius:12px;
+  border:1px solid rgba(212,175,55,0.12);
+  background:rgba(0,0,0,0.2);
+  color:#F1EFE6;
+  font-size:16px;
+  margin-bottom:12px;
+}
+.login-form input:focus{ outline:none; border-color:#D4AF37; }
+.login-form .btn{
+  width:100%;
+  padding:14px;
+  font-size:14px;
+}
+.error-msg{ color:#E0604F; font-size:13px; margin-top:8px; }
+.logout-wrap{ display:flex; justify-content:flex-end; margin-bottom:16px; }
+.status-badge{
+  display:inline-block; padding:4px 12px; border-radius:100px; font-size:11px; font-weight:600;
+  background:rgba(212,175,55,0.15); color:#EAD07E;
+}
+.footer{ margin-top:20px; text-align:center; font-size:11px; color:#6E8478; }
+</style>
+</head>
+<body>
+
+<div class="container" id="app">
+  <div id="loginSection">
+    <h1>🔐 Dashboard Admin</h1>
+    <div class="sub">Masukkan password untuk melihat daftar siswa yang perlu diverifikasi.</div>
+    <div class="login-form">
+      <input type="password" id="passwordInput" placeholder="Masukkan password" />
+      <button class="btn btn-confirm" onclick="login()">Masuk</button>
+      <div class="error-msg" id="loginError"></div>
+    </div>
+  </div>
+
+  <div id="dashboardSection" style="display:none;">
+    <div class="logout-wrap">
+      <button class="btn btn-logout" onclick="logout()">🚪 Keluar</button>
+    </div>
+    <h1>📋 Verifikasi Absensi</h1>
+    <div class="sub" id="infoDate">Hari ini: --</div>
+    <div id="pendingList">
+      <div class="empty">Memuat data...</div>
+    </div>
+    <div class="footer">Siswa yang statusnya "Menunggu Verifikasi" akan muncul di sini.</div>
+  </div>
+</div>
+
+<script>
+const PASSWORD = "admin123";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbxzm4quOwyYwbCTSwY4d86LVj4ubJzvcwtYsZv7Sbl8TaoBTMkcUjMlno5r4qAhiFQ/exec";
+
+let currentData = [];
+
+function login(){
+  const pass = document.getElementById("passwordInput").value;
+  if(pass === PASSWORD){
+    document.getElementById("loginSection").style.display = "none";
+    document.getElementById("dashboardSection").style.display = "block";
+    document.getElementById("loginError").textContent = "";
+    loadPending();
+  } else {
+    document.getElementById("loginError").textContent = "Password salah!";
+  }
+}
+
+function logout(){
+  document.getElementById("loginSection").style.display = "block";
+  document.getElementById("dashboardSection").style.display = "none";
+  document.getElementById("passwordInput").value = "";
+  document.getElementById("loginError").textContent = "";
+}
+
+async function loadPending(){
+  const list = document.getElementById("pendingList");
+  list.innerHTML = '<div class="empty">Memuat data...</div>';
+  
+  try {
+    const url = GAS_URL + '?action=getTodayPending';
+    const resp = await fetch(url);
+    const data = await resp.json();
+    
+    if(data.result === "success" && data.data.length > 0){
+      currentData = data.data;
+      renderList(data.data);
+      const now = new Date();
+      document.getElementById("infoDate").textContent = `Hari ini: ${now.toLocaleDateString('id-ID', { weekday:'long', day:'numeric', month:'long', year:'numeric' })}`;
+    } else {
+      currentData = [];
+      list.innerHTML = '<div class="empty">✅ Semua siswa sudah diverifikasi hari ini.</div>';
+    }
+  } catch(err){
+    list.innerHTML = '<div class="empty">❌ Gagal memuat data. Periksa koneksi.</div>';
+    console.error(err);
+  }
+}
+
+function renderList(data){
+  const list = document.getElementById("pendingList");
+  if(data.length === 0){
+    list.innerHTML = '<div class="empty">✅ Semua siswa sudah diverifikasi hari ini.</div>';
+    return;
+  }
+  
+  let html = '';
+  data.forEach((item, index) => {
+    html += `
+      <div class="card" id="row-${index}">
+        <div class="row">
+          <div>
+            <div class="nama">${item.nama}</div>
+            <div style="font-size:12px; color:#6E8478;">No. ${item.no} · ${item.jam}</div>
+          </div>
+          <div style="display:flex; align-items:center; gap:10px;">
+            <span class="status-badge">Menunggu</span>
+            <button class="btn btn-confirm" onclick="confirmAbsen('${item.nama}', ${index})">Verifikasi</button>
+          </div>
+        </div>
+      </div>
+    `;
+  });
+  list.innerHTML = html;
+}
+
+async function confirmAbsen(nama, index){
+  const btn = document.querySelector(`#row-${index} .btn-confirm`);
+  if(btn) { btn.disabled = true; btn.textContent = "Memproses..."; }
+  
+  try {
+    const url = GAS_URL + '?action=confirm&nama=' + encodeURIComponent(nama);
+    const resp = await fetch(url);
+    const data = await resp.json();
+    
+    if(data.result === "success"){
+      const row = document.getElementById(`row-${index}`);
+      if(row) row.remove();
+      const remaining = document.querySelectorAll('.card').length;
+      if(remaining === 0){
+        document.getElementById("pendingList").innerHTML = '<div class="empty">✅ Semua siswa sudah diverifikasi hari ini.</div>';
+      }
+    } else {
+      alert("Gagal verifikasi: " + (data.message || "Error"));
+      if(btn) { btn.disabled = false; btn.textContent = "Verifikasi"; }
+    }
+  } catch(err){
+    alert("Error: " + err.message);
+    if(btn) { btn.disabled = false; btn.textContent = "Verifikasi"; }
+  }
+}
+
+// Auto-refresh setiap 30 detik
+setInterval(() => {
+  if(document.getElementById("dashboardSection").style.display !== "none"){
+    loadPending();
+  }
+}, 30000);
+
+document.getElementById("passwordInput").addEventListener("keydown", function(e){
+  if(e.key === "Enter") login();
+});
+</script>
+</body>
+</html>
