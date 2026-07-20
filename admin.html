@@ -90,6 +90,15 @@ h1{ font-size:24px; color:#EAD07E; margin-bottom:4px; }
   background:rgba(212,175,55,0.15); color:#EAD07E;
 }
 .footer{ margin-top:20px; text-align:center; font-size:11px; color:#6E8478; }
+.count-badge{
+  background:rgba(212,175,55,0.12);
+  color:#EAD07E;
+  padding:2px 10px;
+  border-radius:100px;
+  font-size:12px;
+  font-weight:600;
+  margin-left:8px;
+}
 </style>
 </head>
 <body>
@@ -109,12 +118,12 @@ h1{ font-size:24px; color:#EAD07E; margin-bottom:4px; }
     <div class="logout-wrap">
       <button class="btn btn-logout" onclick="logout()">🚪 Keluar</button>
     </div>
-    <h1>📋 Verifikasi Absensi</h1>
-    <div class="sub" id="infoDate">Hari ini: --</div>
+    <h1>📋 Verifikasi Absensi <span class="count-badge" id="pendingCount">0</span></h1>
+    <div class="sub" id="infoDate">Hari ini: -- · Refresh setiap 1 detik</div>
     <div id="pendingList">
       <div class="empty">Memuat data...</div>
     </div>
-    <div class="footer">Siswa yang statusnya "Menunggu Verifikasi" akan muncul di sini.</div>
+    <div class="footer">Siswa yang statusnya "Menunggu Verifikasi" akan muncul di sini secara real-time.</div>
   </div>
 </div>
 
@@ -123,6 +132,7 @@ const PASSWORD = "admin123";
 const GAS_URL = "https://script.google.com/macros/s/AKfycbxzm4quOwyYwbCTSwY4d86LVj4ubJzvcwtYsZv7Sbl8TaoBTMkcUjMlno5r4qAhiFQ/exec";
 
 let currentData = [];
+let refreshInterval = null;
 
 function login(){
   const pass = document.getElementById("passwordInput").value;
@@ -131,6 +141,9 @@ function login(){
     document.getElementById("dashboardSection").style.display = "block";
     document.getElementById("loginError").textContent = "";
     loadPending();
+    // MULAI POLLING 1 DETIK
+    if (refreshInterval) clearInterval(refreshInterval);
+    refreshInterval = setInterval(loadPending, 1000);
   } else {
     document.getElementById("loginError").textContent = "Password salah!";
   }
@@ -141,11 +154,15 @@ function logout(){
   document.getElementById("dashboardSection").style.display = "none";
   document.getElementById("passwordInput").value = "";
   document.getElementById("loginError").textContent = "";
+  if (refreshInterval) {
+    clearInterval(refreshInterval);
+    refreshInterval = null;
+  }
 }
 
 async function loadPending(){
   const list = document.getElementById("pendingList");
-  list.innerHTML = '<div class="empty">Memuat data...</div>';
+  const countBadge = document.getElementById("pendingCount");
   
   try {
     const url = GAS_URL + '?action=getTodayPending';
@@ -155,11 +172,13 @@ async function loadPending(){
     if(data.result === "success" && data.data.length > 0){
       currentData = data.data;
       renderList(data.data);
+      countBadge.textContent = data.data.length;
       const now = new Date();
-      document.getElementById("infoDate").textContent = `Hari ini: ${now.toLocaleDateString('id-ID', { weekday:'long', day:'numeric', month:'long', year:'numeric' })}`;
+      document.getElementById("infoDate").textContent = `Hari ini: ${now.toLocaleDateString('id-ID', { weekday:'long', day:'numeric', month:'long', year:'numeric' })} · Refresh setiap 1 detik`;
     } else {
       currentData = [];
       list.innerHTML = '<div class="empty">✅ Semua siswa sudah diverifikasi hari ini.</div>';
+      countBadge.textContent = "0";
     }
   } catch(err){
     list.innerHTML = '<div class="empty">❌ Gagal memuat data. Periksa koneksi.</div>';
@@ -207,6 +226,7 @@ async function confirmAbsen(nama, index){
       const row = document.getElementById(`row-${index}`);
       if(row) row.remove();
       const remaining = document.querySelectorAll('.card').length;
+      document.getElementById("pendingCount").textContent = remaining;
       if(remaining === 0){
         document.getElementById("pendingList").innerHTML = '<div class="empty">✅ Semua siswa sudah diverifikasi hari ini.</div>';
       }
@@ -219,13 +239,6 @@ async function confirmAbsen(nama, index){
     if(btn) { btn.disabled = false; btn.textContent = "Verifikasi"; }
   }
 }
-
-// Auto-refresh setiap 30 detik
-setInterval(() => {
-  if(document.getElementById("dashboardSection").style.display !== "none"){
-    loadPending();
-  }
-}, 30000);
 
 document.getElementById("passwordInput").addEventListener("keydown", function(e){
   if(e.key === "Enter") login();
