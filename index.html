@@ -364,7 +364,7 @@ footer{ text-align:center; padding:12px 20px 26px; font-size:10px; color:var(--t
             ABSEN<br>SEKARANG
           </button>
         </div>
-        <div class="hint-text">📍 Maksimal 50 meter dari sekolah · Jam 13.00 – 15.00</div>
+        <div class="hint-text">📍 Maksimal 1000 meter dari sekolah · Jam 13.00 – 23.59 (Mode Testing)</div>
       </div>
     </section>
 
@@ -387,15 +387,15 @@ footer{ text-align:center; padding:12px 20px 26px; font-size:10px; color:var(--t
 
 <script>
 /* ==========================================================================
-   KONFIGURASI — URL BACKEND SUDAH DIUPDATE
+   KONFIGURASI — MODE TESTING (Radius 1000m, Jam 13.00 - 23.59)
    ========================================================================== */
 const CONFIG = {
-  schoolLat: -0.30975,      // 0°18'35.1"S
-  schoolLng: 103.1621389,   // 103°09'43.7"E
-  radiusMeters: 50,
+  schoolLat: -0.30975,
+  schoolLng: 103.1621389,
+  radiusMeters: 1000,           // <-- DIUBAH JADI 1000 METER
   gasUrl: "https://script.google.com/macros/s/AKfycbxzm4quOwyYwbCTSwY4d86LVj4ubJzvcwtYsZv7Sbl8TaoBTMkcUjMlno5r4qAhiFQ/exec",
   jamMulai: 13,
-  jamSelesai: 15,
+  jamSelesai: 24,               // <-- DIUBAH JADI 24 (artinya sampai jam 23.59)
   students: [
     { no: 1, nama: "ALFIAN NATANAEL NABABAN" },
     { no: 2, nama: "BAGUS TRI PASANDRA" },
@@ -598,12 +598,12 @@ async function handleAbsen(){
   const identity=getIdentity();
   if(!identity) return;
 
-  // CEK JAM (13.00 – 15.00)
+  // CEK JAM (13.00 – 23.59)
   const now = new Date();
   const jam = now.getHours();
   const menit = now.getMinutes();
   if (jam < CONFIG.jamMulai || jam >= CONFIG.jamSelesai || (jam === CONFIG.jamSelesai && menit > 0)) {
-    alert(`Absensi hanya dapat dilakukan antara pukul ${CONFIG.jamMulai}.00 – ${CONFIG.jamSelesai}.00.`);
+    alert(`Absensi hanya dapat dilakukan antara pukul ${CONFIG.jamMulai}.00 – 23.59 (Mode Testing).`);
     return;
   }
 
