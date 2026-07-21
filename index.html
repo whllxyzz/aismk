@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-/* ===== SAMA SEPERTI SEBELUMNYA (TIDAK SAYA UBAH) ===== */
+/* ===== STYLE SAMA SEPERTI SEBELUMNYA (TIDAK SAYA UBAH) ===== */
 :root {
   --bg: #0a1a12;
   --surface: rgba(18, 51, 36, 0.65);
@@ -367,7 +367,7 @@ footer{ text-align:center; padding:12px 20px 26px; font-size:10px; color:var(--t
             ABSEN<br>SEKARANG
           </button>
         </div>
-        <div class="hint-text">📍 Maksimal 1000 meter dari sekolah · Jam 13.00 – 23.59 (Mode Testing)</div>
+        <div class="hint-text">📍 Maksimal 1000 meter dari sekolah · 24 Jam (Mode Testing)</div>
       </div>
     </section>
 
@@ -390,15 +390,15 @@ footer{ text-align:center; padding:12px 20px 26px; font-size:10px; color:var(--t
 
 <script>
 /* ==========================================================================
-   KONFIGURASI — MODE TESTING (Radius 1000m, Jam 13.00 - 23.59)
+   KONFIGURASI — GANTI DENGAN URL BACKEND ANDA
    ========================================================================== */
 const CONFIG = {
   schoolLat: -0.30975,
   schoolLng: 103.1621389,
   radiusMeters: 1000,
   gasUrl: "https://script.google.com/macros/s/AKfycbxzm4quOwyYwbCTSwY4d86LVj4ubJzvcwtYsZv7Sbl8TaoBTMkcUjMlno5r4qAhiFQ/exec",
-  jamMulai: 13,
-  jamSelesai: 24,
+  jamMulai: 0,    // 24 JAM (TESTING)
+  jamSelesai: 24, // 24 JAM (TESTING)
   students: [
     { no: 1, nama: "ALFIAN NATANAEL NABABAN" },
     { no: 2, nama: "BAGUS TRI PASANDRA" },
@@ -489,7 +489,7 @@ async function checkVerificationStatus(nama, callback){
   }
 }
 
-function updateStatusDisplay(status, jam, tanggal, isDone){
+function updateStatusDisplay(status, jam, tanggal){
   const card = document.getElementById("statusCard");
   const badge = document.getElementById("statusBadge");
   const detail = document.getElementById("statusDetail");
@@ -520,13 +520,21 @@ function updateStatusDisplay(status, jam, tanggal, isDone){
   
   detail.textContent = `Jam: ${jam || '-'} · ${tanggal || ''}`;
   
-  // Jika status sudah final (Hadir/Izin/Sakit), tandai hari ini sudah absen
+  // Jika status sudah final, tandai hari ini sudah absen dan hentikan polling
   if (status === "Hadir" || status === "Izin" || status === "Sakit") {
     localStorage.setItem(LS_LAST_ABSEN, todayKey(new Date()));
-    // Hentikan polling jika status sudah final
     if (statusPollInterval) {
       clearInterval(statusPollInterval);
       statusPollInterval = null;
+    }
+    // Pindah ke layar selesai
+    showScreen("screen-done");
+    document.getElementById("doneText").textContent = `✅ Absensi ${status} (${jam}) - Sudah diverifikasi.`;
+  } else {
+    // Jika status masih pending, pastikan LOCAL STORAGE TIDAK MENANDAI HARI INI SUDAH ABSEN
+    // Ini bagian penting untuk mencegah bug refresh
+    if (localStorage.getItem(LS_LAST_ABSEN) === todayKey(new Date())) {
+      localStorage.removeItem(LS_LAST_ABSEN);
     }
   }
 }
@@ -539,45 +547,45 @@ async function init(){
   document.getElementById("greetName").textContent=identity.nama;
   document.getElementById("greetMeta").textContent=`Nomor Absen ${identity.no}`;
 
-  // Cek status verifikasi dari server (pertama kali)
+  // Cek status dari server
   const statusData = await checkVerificationStatus(identity.nama);
   if (statusData && statusData.result === "success") {
     updateStatusDisplay(statusData.status, statusData.jam, statusData.tanggal);
-    if (statusData.status === "Hadir" || statusData.status === "Izin" || statusData.status === "Sakit") {
-      localStorage.setItem(LS_LAST_ABSEN, todayKey(new Date()));
+    // updateStatusDisplay sudah mengurus LS_LAST_ABSEN
+    // Jika status "Menunggu Verifikasi", LS_LAST_ABSEN sudah dihapus di dalam fungsi tersebut
+  } else {
+    // Jika tidak ada data (belum absen), pastikan LS_LAST_ABSEN tidak menyetel hari ini
+    if (localStorage.getItem(LS_LAST_ABSEN) === todayKey(new Date())) {
+      localStorage.removeItem(LS_LAST_ABSEN);
     }
+    // Tampilkan layar absensi
+    showScreen("screen-attendance");
+    // Tapi jika statusCard tidak muncul, kita sembunyikan
+    document.getElementById("statusCard").style.display = "none";
   }
 
-  if(hasAbsenToday()){
-    showScreen("screen-done");
-  } else {
+  // Tentukan layar awal berdasarkan status terkini (sudah diatur di updateStatusDisplay)
+  // Namun jika statusData tidak ada (belum absen), tampilkan screen-attendance
+  if (!statusData || statusData.result !== "success") {
     showScreen("screen-attendance");
   }
   
-  // MULAI POLLING 1 DETIK UNTUK UPDATE STATUS (jika sudah absen tapi masih pending)
-  if (identity && !hasAbsenToday()) {
-    // Polling hanya jika status belum final
-    if (statusPollInterval) clearInterval(statusPollInterval);
-    statusPollInterval = setInterval(async () => {
-      const data = await checkVerificationStatus(identity.nama);
-      if (data && data.result === "success") {
-        updateStatusDisplay(data.status, data.jam, data.tanggal);
-        if (data.status === "Hadir" || data.status === "Izin" || data.status === "Sakit") {
-          // Sudah final, hentikan polling
-          if (statusPollInterval) {
-            clearInterval(statusPollInterval);
-            statusPollInterval = null;
-          }
-          // Refresh tampilan (misal pindah ke screen-done jika sudah final)
-          if (data.status === "Hadir" || data.status === "Izin" || data.status === "Sakit") {
-            localStorage.setItem(LS_LAST_ABSEN, todayKey(new Date()));
-            // Tampilkan screen done
-            showScreen("screen-done");
-            document.getElementById("doneText").textContent = `✅ Absensi ${data.status} (${data.jam}) - Sudah diverifikasi.`;
-          }
+  // Mulai polling jika identitas ada dan status belum final
+  if (identity) {
+    // Cek lagi apakah status sudah final (dari updateStatusDisplay mungkin sudah set LS_LAST_ABSEN)
+    if (!hasAbsenToday()) {
+      if (statusPollInterval) clearInterval(statusPollInterval);
+      statusPollInterval = setInterval(async () => {
+        const data = await checkVerificationStatus(identity.nama);
+        if (data && data.result === "success") {
+          updateStatusDisplay(data.status, data.jam, data.tanggal);
+          // updateStatusDisplay akan menangani jika status final
         }
-      }
-    }, 1000); // SETIAP 1 DETIK
+      }, 1000);
+    } else {
+      // Jika sudah absen (final), tampilkan screen-done
+      showScreen("screen-done");
+    }
   }
 }
 
@@ -649,14 +657,8 @@ async function handleAbsen(){
   const identity=getIdentity();
   if(!identity) return;
 
-  // CEK JAM (13.00 – 23.59)
-  const now = new Date();
-  const jam = now.getHours();
-  const menit = now.getMinutes();
-  if (jam < CONFIG.jamMulai || jam >= CONFIG.jamSelesai || (jam === CONFIG.jamSelesai && menit > 0)) {
-    alert(`Absensi hanya dapat dilakukan antara pukul ${CONFIG.jamMulai}.00 – 23.59 (Mode Testing).`);
-    return;
-  }
+  // 24 JAM — tidak ada pengecekan jam
+  // (sudah diatur jamMulai=0 dan jamSelesai=24)
 
   document.getElementById("absenBtnWrap").classList.add("pinging");
   document.getElementById("btnAbsen").disabled=true;
@@ -708,15 +710,13 @@ async function onLocationSuccess(position, identity){
   setOverlay(`<div class="spinner"></div><div class="overlay-title display">Mengirim data</div><div class="overlay-sub">Menyimpan absensi ke sistem sekolah.</div><div class="overlay-steps">${stepsHtml("send")}</div>`);
 
   try{
-    // Menggunakan mode no-cors agar tidak ada masalah CORS
     await fetch(CONFIG.gasUrl, {
       method: "POST",
       mode: "no-cors",
       headers: { "Content-Type": "text/plain;charset=utf-8" },
       body: JSON.stringify(payload)
     });
-    // Karena no-cors, kita tidak bisa membaca response, tapi data tetap terkirim.
-    // Anggap sukses.
+    // TIDAK SET LS_LAST_ABSEN DI SINI!
     onSendSuccess(payload, distance, accuracy);
   }catch(err){
     onSendError(payload, err);
@@ -725,7 +725,8 @@ async function onLocationSuccess(position, identity){
 
 function onSendSuccess(payload, distance, accuracy){
   document.getElementById("absenBtnWrap").classList.remove("pinging");
-  localStorage.setItem(LS_LAST_ABSEN, todayKey(new Date()));
+  // HAPUS baris localStorage.setItem(LS_LAST_ABSEN, ...) DI SINI!
+  // Jangan tandai sudah absen sampai status benar-benar final.
   const googleMaps=`https://www.google.com/maps?q=${payload.latitude},${payload.longitude}`;
   
   const statusText = payload.status === "Hadir" ? "Menunggu Verifikasi Guru" : payload.status;
@@ -747,9 +748,7 @@ function onSendError(payload, err){
 
 function finishAbsen(){
   closeOverlay();
-  // Setelah absen, kita langsung tampilkan halaman absensi dengan status pending
-  // Tapi karena kita sudah polling, status akan update otomatis.
-  // Jadi kita tetap di screen-attendance dengan status card.
+  // Tampilkan layar absensi, statusCard akan muncul dengan status "Menunggu Verifikasi"
   showScreen("screen-attendance");
   // Mulai polling untuk update status
   const identity = getIdentity();
@@ -759,16 +758,7 @@ function finishAbsen(){
       const data = await checkVerificationStatus(identity.nama);
       if (data && data.result === "success") {
         updateStatusDisplay(data.status, data.jam, data.tanggal);
-        if (data.status === "Hadir" || data.status === "Izin" || data.status === "Sakit") {
-          if (statusPollInterval) {
-            clearInterval(statusPollInterval);
-            statusPollInterval = null;
-          }
-          localStorage.setItem(LS_LAST_ABSEN, todayKey(new Date()));
-          // Tampilkan screen done dengan pesan sukses
-          showScreen("screen-done");
-          document.getElementById("doneText").textContent = `✅ Absensi ${data.status} (${data.jam}) - Sudah diverifikasi.`;
-        }
+        // updateStatusDisplay akan menangani jika status final
       }
     }, 1000);
   }
