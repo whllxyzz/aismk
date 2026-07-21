@@ -1,248 +1,577 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dashboard Admin — Absensi MPP</title>
-<style>
-*{box-sizing:border-box;margin:0;padding:0;}
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Admin — Absensi MPP</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+/* =========================================================
+   DASHBOARD ADMIN — Absensi MPP
+   Tema: LUXURY — selaras dengan app siswa
+   ========================================================= */
+:root{
+  --bg:#0A0A0B; --bg-2:#141416;
+  --surface: rgba(255,255,255,0.028);
+  --surface-2: rgba(255,255,255,0.045);
+  --surface-border: rgba(201,162,39,0.22);
+  --gold:#C9A227; --gold-soft:#E8D9B5; --gold-glow: rgba(201,162,39,0.3);
+  --cream:#F5F1E8; --teal:#2E8A63; --teal-glow: rgba(46,138,99,0.24);
+  --red:#9B3232; --text:#F5F1E8; --text-muted:#B3A791; --text-dim:#766C5E;
+  --radius-xl:16px; --radius-lg:14px; --radius-sm:3px;
+  --shadow-deep: 0 30px 70px -22px rgba(0,0,0,0.9);
+  --ease: cubic-bezier(.16,1,.3,1);
+}
+*{ box-sizing:border-box; margin:0; padding:0; }
 body{
-  background:#0a1a12;
-  color:#F1EFE6;
-  font-family:'Inter',sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-family:'Inter', sans-serif;
   min-height:100vh;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  padding:20px;
+  display:flex; align-items:center; justify-content:center;
+  padding:24px;
+  -webkit-font-smoothing:antialiased;
+  position:relative;
+  overflow-x:hidden;
 }
+body::before{
+  content:''; position:fixed; inset:0; z-index:0; pointer-events:none;
+  background:
+    radial-gradient(ellipse 620px 420px at 10% 6%, rgba(201,162,39,0.09), transparent 70%),
+    radial-gradient(ellipse 480px 480px at 94% 92%, rgba(46,138,99,0.06), transparent 68%),
+    linear-gradient(180deg, var(--bg-2) 0%, var(--bg) 45%);
+}
+button:focus-visible, input:focus-visible, a:focus-visible{
+  outline:1px solid var(--gold); outline-offset:3px; border-radius:1px;
+}
+::-webkit-scrollbar{ width:4px; }
+::-webkit-scrollbar-track{ background:transparent; }
+::-webkit-scrollbar-thumb{ background:var(--gold-glow); border-radius:10px; }
+
 .container{
-  max-width:700px;
-  width:100%;
-  background:rgba(18,51,36,0.65);
-  backdrop-filter:blur(20px);
-  border:1px solid rgba(212,175,55,0.12);
-  border-radius:24px;
-  padding:30px;
-  box-shadow:0 25px 60px -20px rgba(0,0,0,0.7);
+  position:relative; z-index:1;
+  max-width:820px; width:100%;
+  background: var(--surface);
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  border:1px solid var(--surface-border);
+  border-radius:var(--radius-lg);
+  padding:36px 34px;
+  box-shadow:var(--shadow-deep);
+  transition: all .3s var(--ease);
 }
-h1{ font-size:24px; color:#EAD07E; margin-bottom:4px; }
-.sub{ color:#9FB3A8; font-size:13px; margin-bottom:24px; }
-.card{
-  background:rgba(0,0,0,0.2);
-  border-radius:14px;
-  padding:16px 18px;
-  margin-bottom:12px;
-  border:1px solid rgba(212,175,55,0.06);
+.container::before{
+  content:''; position:absolute; top:0; left:26px; right:26px; height:1px;
+  background:linear-gradient(90deg, transparent, rgba(201,162,39,0.35), transparent);
 }
-.card .row{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  gap:10px;
+.container::after{
+  content:''; position:absolute; inset:14px; border:1px solid rgba(201,162,39,0.12);
+  border-radius:12px; pointer-events:none;
 }
-.card .nama{ font-weight:600; }
-.card .jam{ color:#9FB3A8; font-size:13px; }
-.btn{
-  border:none;
-  padding:6px 16px;
-  border-radius:100px;
-  font-weight:600;
-  font-size:12px;
-  cursor:pointer;
-  transition:all .15s ease;
+
+/* ===== LOGIN ===== */
+.login-section{ position:relative; z-index:1; text-align:center; padding:28px 6px; }
+.login-section .lock-icon{
+  position:relative;
+  font-size:40px; margin-bottom:16px; display:flex; align-items:center; justify-content:center;
+  width:74px; height:74px; margin-left:auto; margin-right:auto; border-radius:3px;
+  background:linear-gradient(135deg, #1C1712, #100D09); border:1px solid rgba(201,162,39,0.32);
+  box-shadow:0 14px 34px -12px rgba(201,162,39,0.35), inset 0 1px 0 rgba(255,255,255,0.06);
 }
-.btn:active{ transform:scale(.95); }
-.btn-confirm{
-  background:linear-gradient(135deg, #EAD07E, #D4AF37);
-  color:#0a1a12;
+.login-section h1{
+  font-family:'Playfair Display', serif; font-size:26px; font-weight:700;
+  letter-spacing:0.01em;
+  background:linear-gradient(135deg, #F5F1E8 0%, #E8D9B5 100%);
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+  margin-bottom:8px;
 }
-.btn-confirm:hover{ opacity:0.8; }
-.btn-confirm:disabled{ opacity:0.4; cursor:not-allowed; }
-.btn-logout{
-  background:rgba(255,255,255,0.06);
-  color:#9FB3A8;
-  border:1px solid rgba(212,175,55,0.1);
-}
-.btn-logout:hover{ border-color:rgba(212,175,55,0.3); }
-.empty{ text-align:center; color:#6E8478; padding:30px 0; }
-.login-form{ text-align:center; }
+.login-section .sub{ color:var(--text-muted); font-size:13px; margin-bottom:32px; line-height:1.6; letter-spacing:0.01em; }
+.login-form{ max-width:320px; margin:0 auto; position:relative; z-index:1; }
 .login-form input{
-  width:100%;
-  padding:14px;
-  border-radius:12px;
-  border:1px solid rgba(212,175,55,0.12);
-  background:rgba(0,0,0,0.2);
-  color:#F1EFE6;
-  font-size:16px;
-  margin-bottom:12px;
+  width:100%; padding:16px 20px; border-radius:2px;
+  border:1px solid var(--surface-border);
+  background:rgba(0,0,0,0.3); color:var(--text);
+  font-size:15px; font-family:'Inter', sans-serif;
+  transition:border .2s var(--ease), box-shadow .2s var(--ease);
+  margin-bottom:14px;
 }
-.login-form input:focus{ outline:none; border-color:#D4AF37; }
-.login-form .btn{
-  width:100%;
-  padding:14px;
-  font-size:14px;
+.login-form input::placeholder{ color:var(--text-dim); }
+.login-form input:focus{
+  outline:none; border-color:var(--gold);
+  box-shadow:0 0 0 3px rgba(201,162,39,0.1);
 }
-.error-msg{ color:#E0604F; font-size:13px; margin-top:8px; }
-.logout-wrap{ display:flex; justify-content:flex-end; margin-bottom:16px; }
+.login-form .btn-login{
+  width:100%; padding:16px; border:none; border-radius:2px;
+  font-size:12px; font-weight:700; color:var(--bg); letter-spacing:0.14em;
+  background:linear-gradient(135deg, var(--gold-soft), var(--gold));
+  cursor:pointer; transition:all .2s var(--ease);
+  font-family:'Inter', sans-serif;
+  box-shadow:0 12px 30px -10px rgba(201,162,39,0.45);
+  text-transform:uppercase;
+}
+.login-form .btn-login:hover{ transform:translateY(-2px); box-shadow:0 16px 36px -10px rgba(201,162,39,0.6); }
+.login-form .btn-login:active{ transform:scale(.97); }
+.error-msg{ color:var(--red); font-size:12px; margin-top:14px; min-height:16px; }
+
+/* ===== DASHBOARD HEADER ===== */
+.dash-header{
+  position:relative; z-index:1;
+  display:flex; justify-content:space-between; align-items:center;
+  flex-wrap:wrap; gap:12px; margin-bottom:8px;
+}
+.dash-header h1{
+  font-family:'Playfair Display', serif; font-size:23px; font-weight:700;
+  color:var(--cream); display:flex; align-items:center; gap:10px; letter-spacing:0.005em;
+}
+.dash-header h1 span{ color:var(--gold-soft); }
+.dash-header .logout-btn{
+  background:transparent; border:1px solid var(--surface-border);
+  color:var(--text-muted); padding:8px 18px; border-radius:2px;
+  font-size:11px; font-weight:600; cursor:pointer; transition:all .2s var(--ease);
+  font-family:'Inter', sans-serif; text-transform:uppercase; letter-spacing:0.08em;
+}
+.dash-header .logout-btn:hover{
+  border-color:rgba(201,162,39,0.4); color:var(--text); background:rgba(201,162,39,0.05);
+}
+.dash-sub{
+  position:relative; z-index:1;
+  color:var(--text-muted); font-size:12px; margin-bottom:28px;
+  display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px; align-items:center;
+}
+.dash-sub .live-badge{
+  background:rgba(46,138,99,0.14); color:var(--teal); padding:3px 13px;
+  border-radius:2px; font-size:10px; font-weight:600; letter-spacing:0.04em;
+  display:inline-flex; align-items:center; gap:6px; border:1px solid rgba(46,138,99,0.28);
+}
+.live-badge .dot{
+  width:5px; height:5px; background:var(--teal); border-radius:50%;
+  animation:pulse-dot 1.6s ease-in-out infinite;
+}
+@keyframes pulse-dot{ 0%,100%{opacity:1;transform:scale(1);} 50%{opacity:.3;transform:scale(.7);} }
+
+/* ===== STATS ===== */
+.stats-row{ position:relative; z-index:1; display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:28px; }
+.stat-card{
+  position:relative;
+  background:rgba(0,0,0,0.25); border-radius:2px; padding:17px 16px;
+  border:1px solid var(--surface-border); text-align:center;
+  transition:transform .2s var(--ease);
+}
+.stat-card:hover{ transform:translateY(-2px); }
+.stat-card .stat-number{
+  font-family:'Playfair Display', serif; font-size:26px; font-weight:700; line-height:1.2;
+}
+.stat-card .stat-label{
+  font-size:10.5px; color:var(--text-muted); font-weight:500; letter-spacing:0.06em; margin-top:4px;
+  text-transform:uppercase;
+}
+.stat-total .stat-number{ color:var(--cream); }
+.stat-pending .stat-number{ color:var(--gold-soft); }
+.stat-done .stat-number{ color:var(--teal); }
+.stat-total{ border-top:2px solid rgba(245,241,232,0.25); }
+.stat-pending{ border-top:2px solid rgba(201,162,39,0.5); }
+.stat-done{ border-top:2px solid rgba(46,138,99,0.45); }
+
+/* ===== TABS ===== */
+.tabs{
+  position:relative; z-index:1;
+  display:flex; gap:2px; margin-bottom:22px;
+  background:rgba(0,0,0,0.2); padding:4px; border-radius:2px;
+  border:1px solid var(--surface-border);
+}
+.tab-btn{
+  flex:1; padding:11px 12px; border:none; border-radius:1px;
+  font-weight:600; font-size:11.5px; cursor:pointer; transition:all .25s var(--ease);
+  background:transparent; color:var(--text-muted); font-family:'Inter', sans-serif;
+  display:flex; align-items:center; justify-content:center; gap:8px;
+  text-transform:uppercase; letter-spacing:0.05em;
+}
+.tab-btn:hover{ color:var(--text); }
+.tab-btn.active{
+  background:rgba(201,162,39,0.1); color:var(--gold-soft);
+}
+.tab-btn .badge{
+  background:rgba(201,162,39,0.14); color:var(--gold-soft);
+  padding:1px 8px; border-radius:2px; font-size:10px; font-weight:700;
+  min-width:20px; text-align:center;
+}
+.tab-btn.active .badge{ background:rgba(201,162,39,0.24); }
+
+.tab-content{ position:relative; z-index:1; display:none; animation:fadeIn .3s ease; }
+.tab-content.active{ display:block; }
+@keyframes fadeIn{ from{opacity:0;transform:translateY(6px);} to{opacity:1;transform:translateY(0);} }
+
+/* ===== LIST CARDS ===== */
+.list-container{ max-height:420px; overflow-y:auto; padding-right:4px; }
+.card-item{
+  position:relative;
+  background:var(--surface-2); border-radius:2px; padding:16px 19px 16px 21px;
+  margin-bottom:9px; border:1px solid var(--surface-border);
+  display:flex; justify-content:space-between; align-items:center; gap:12px;
+  transition:all .2s var(--ease); animation:slideUp .25s var(--ease);
+  overflow:hidden;
+}
+.card-item::before{
+  content:''; position:absolute; left:0; top:0; bottom:0; width:2px;
+  background:var(--gold-glow);
+}
+@keyframes slideUp{ from{opacity:0;transform:translateY(8px);} to{opacity:1;transform:translateY(0);} }
+.card-item:hover{ background:rgba(255,255,255,0.045); border-color:rgba(201,162,39,0.3); }
+
+.card-left{ display:flex; flex-direction:column; gap:4px; min-width:0; }
+.card-left .name{
+  font-weight:600; font-size:14.5px; color:var(--cream); font-family:'Playfair Display',serif;
+  display:flex; align-items:center; gap:8px;
+}
+.card-left .name .no-badge{
+  background:rgba(255,255,255,0.045); color:var(--text-muted); font-size:9.5px; font-weight:700;
+  padding:1px 8px; border-radius:2px; border:1px solid rgba(255,255,255,0.06);
+  font-family:'JetBrains Mono', monospace;
+}
+.card-left .meta{
+  font-size:11px; color:var(--text-dim); display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+}
+.card-left .meta .map-link{
+  color:var(--teal); text-decoration:none; font-size:10.5px; font-weight:600;
+  display:inline-flex; align-items:center; gap:4px;
+}
+.card-left .meta .map-link:hover{ text-decoration:underline; }
+
+.card-right{ display:flex; align-items:center; gap:10px; flex-shrink:0; }
 .status-badge{
-  display:inline-block; padding:4px 12px; border-radius:100px; font-size:11px; font-weight:600;
-  background:rgba(212,175,55,0.15); color:#EAD07E;
+  display:inline-block; padding:4px 13px; border-radius:2px;
+  font-size:10px; font-weight:700; white-space:nowrap; letter-spacing:0.06em; text-transform:uppercase;
+  border:1px solid transparent;
 }
-.footer{ margin-top:20px; text-align:center; font-size:11px; color:#6E8478; }
-.count-badge{
-  background:rgba(212,175,55,0.12);
-  color:#EAD07E;
-  padding:2px 10px;
-  border-radius:100px;
-  font-size:12px;
-  font-weight:600;
-  margin-left:8px;
+.status-pending{ background:rgba(201,162,39,0.12); color:var(--gold-soft); border-color:rgba(201,162,39,0.3); }
+.status-hadir{ background:rgba(46,138,99,0.14); color:var(--teal); border-color:rgba(46,138,99,0.3); }
+.status-izin{ background:rgba(155,50,50,0.14); color:#C97A7A; border-color:rgba(155,50,50,0.3); }
+.status-sakit{ background:rgba(155,50,50,0.14); color:#C97A7A; border-color:rgba(155,50,50,0.3); }
+
+.btn-confirm{
+  border:none; padding:8px 17px; border-radius:2px; font-weight:700; font-size:10.5px;
+  cursor:pointer; transition:all .2s var(--ease);
+  background:linear-gradient(135deg, var(--gold-soft), var(--gold));
+  color:var(--bg); font-family:'Inter', sans-serif; white-space:nowrap;
+  text-transform:uppercase; letter-spacing:0.05em;
+  box-shadow:0 6px 16px -6px rgba(201,162,39,0.4);
+}
+.btn-confirm:hover{ transform:translateY(-1px); box-shadow:0 8px 20px -6px rgba(201,162,39,0.55); }
+.btn-confirm:disabled{ opacity:.4; cursor:not-allowed; transform:none; box-shadow:none; }
+
+.empty-state{ text-align:center; color:var(--text-dim); padding:46px 0; font-size:13px; letter-spacing:0.02em; }
+.empty-state .icon{ font-size:28px; display:block; margin-bottom:14px; opacity:0.7; filter:saturate(0.6); }
+
+/* ===== RESPONSIVE ===== */
+@media (max-width:600px){
+  .container{ padding:24px 18px; }
+  .container::after{ inset:10px; }
+  .stats-row{ grid-template-columns:1fr 1fr 1fr; gap:7px; }
+  .stat-card{ padding:12px 8px; }
+  .stat-card .stat-number{ font-size:19px; }
+  .stat-card .stat-label{ font-size:9px; }
+  .dash-header h1{ font-size:19px; }
+  .card-item{ flex-direction:column; align-items:stretch; gap:10px; padding:15px 17px; }
+  .card-right{ justify-content:space-between; }
+  .tabs{ flex-wrap:nowrap; overflow-x:auto; }
+  .tab-btn{ font-size:11px; padding:9px 10px; flex:0 0 auto; }
+}
+@media (max-width:420px){
+  .stats-row{ grid-template-columns:1fr; gap:6px; }
+  .stat-card{ display:flex; align-items:center; justify-content:space-between; text-align:left; padding:12px 16px; }
+}
+@media (prefers-reduced-motion: reduce){
+  *{ animation-duration:0.001ms !important; animation-iteration-count:1 !important; transition-duration:0.001ms !important; }
 }
 </style>
 </head>
 <body>
 
 <div class="container" id="app">
-  <div id="loginSection">
-    <h1>🔐 Dashboard Admin</h1>
-    <div class="sub">Masukkan password untuk melihat daftar siswa yang perlu diverifikasi.</div>
+
+  <!-- ===== LOGIN ===== -->
+  <div id="loginSection" class="login-section">
+    <span class="lock-icon">🔐</span>
+    <h1>Dashboard Admin</h1>
+    <div class="sub">Masukkan password untuk mengelola absensi hari ini.</div>
     <div class="login-form">
       <input type="password" id="passwordInput" placeholder="Masukkan password" />
-      <button class="btn btn-confirm" onclick="login()">Masuk</button>
+      <button class="btn-login" onclick="login()">Masuk ke Dashboard</button>
       <div class="error-msg" id="loginError"></div>
     </div>
   </div>
 
+  <!-- ===== DASHBOARD ===== -->
   <div id="dashboardSection" style="display:none;">
-    <div class="logout-wrap">
-      <button class="btn btn-logout" onclick="logout()">🚪 Keluar</button>
+
+    <!-- HEADER -->
+    <div class="dash-header">
+      <h1>📋 <span>Dashboard</span> Absensi</h1>
+      <button class="logout-btn" onclick="logout()">🚪 Keluar</button>
     </div>
-    <h1>📋 Verifikasi Absensi <span class="count-badge" id="pendingCount">0</span></h1>
-    <div class="sub" id="infoDate">Hari ini: -- · Refresh setiap 1 detik</div>
-    <div id="pendingList">
-      <div class="empty">Memuat data...</div>
+    <div class="dash-sub">
+      <span id="infoDate">Hari ini: --</span>
+      <span class="live-badge"><span class="dot"></span> Live (1 detik)</span>
     </div>
-    <div class="footer">Siswa yang statusnya "Menunggu Verifikasi" akan muncul di sini secara real-time.</div>
+
+    <!-- STATS -->
+    <div class="stats-row">
+      <div class="stat-card stat-total"><div class="stat-number" id="statTotal">0</div><div class="stat-label">Total Absen</div></div>
+      <div class="stat-card stat-pending"><div class="stat-number" id="statPending">0</div><div class="stat-label">🔄 Menunggu</div></div>
+      <div class="stat-card stat-done"><div class="stat-number" id="statDone">0</div><div class="stat-label">✅ Selesai</div></div>
+    </div>
+
+    <!-- TABS -->
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="pending" onclick="switchTab('pending')">
+        🔄 Menunggu <span class="badge" id="pendingBadge">0</span>
+      </button>
+      <button class="tab-btn" data-tab="confirmed" onclick="switchTab('confirmed')">
+        ✅ Selesai <span class="badge" id="confirmedBadge">0</span>
+      </button>
+    </div>
+
+    <!-- TAB PENDING -->
+    <div class="tab-content active" id="tab-pending">
+      <div class="list-container" id="pendingList">
+        <div class="empty-state"><span class="icon">⏳</span>Memuat data...</div>
+      </div>
+    </div>
+
+    <!-- TAB CONFIRMED -->
+    <div class="tab-content" id="tab-confirmed">
+      <div class="list-container" id="confirmedList">
+        <div class="empty-state"><span class="icon">📭</span>Memuat data...</div>
+      </div>
+    </div>
+
   </div>
 </div>
 
 <script>
-const PASSWORD = "admin123";
-const GAS_URL = "https://script.google.com/macros/s/AKfycbxzm4quOwyYwbCTSwY4d86LVj4ubJzvcwtYsZv7Sbl8TaoBTMkcUjMlno5r4qAhiFQ/exec";
+  // ============================================================
+  // KONFIGURASI — GANTI DENGAN URL BACKEND DAN PASSWORD ANDA
+  // ============================================================
+  const PASSWORD = "admin123";
+  const GAS_URL = "https://script.google.com/macros/s/AKfycbxzm4quOwyYwbCTSwY4d86LVj4ubJzvcwtYsZv7Sbl8TaoBTMkcUjMlno5r4qAhiFQ/exec";
 
-let currentData = [];
-let refreshInterval = null;
+  let refreshInterval = null;
 
-function login(){
-  const pass = document.getElementById("passwordInput").value;
-  if(pass === PASSWORD){
-    document.getElementById("loginSection").style.display = "none";
-    document.getElementById("dashboardSection").style.display = "block";
-    document.getElementById("loginError").textContent = "";
-    loadPending();
-    // MULAI POLLING 1 DETIK
-    if (refreshInterval) clearInterval(refreshInterval);
-    refreshInterval = setInterval(loadPending, 1000);
-  } else {
-    document.getElementById("loginError").textContent = "Password salah!";
-  }
-}
-
-function logout(){
-  document.getElementById("loginSection").style.display = "block";
-  document.getElementById("dashboardSection").style.display = "none";
-  document.getElementById("passwordInput").value = "";
-  document.getElementById("loginError").textContent = "";
-  if (refreshInterval) {
-    clearInterval(refreshInterval);
-    refreshInterval = null;
-  }
-}
-
-async function loadPending(){
-  const list = document.getElementById("pendingList");
-  const countBadge = document.getElementById("pendingCount");
-  
-  try {
-    const url = GAS_URL + '?action=getTodayPending';
-    const resp = await fetch(url);
-    const data = await resp.json();
-    
-    if(data.result === "success" && data.data.length > 0){
-      currentData = data.data;
-      renderList(data.data);
-      countBadge.textContent = data.data.length;
-      const now = new Date();
-      document.getElementById("infoDate").textContent = `Hari ini: ${now.toLocaleDateString('id-ID', { weekday:'long', day:'numeric', month:'long', year:'numeric' })} · Refresh setiap 1 detik`;
+  // ============================================================
+  // LOGIN / LOGOUT
+  // ============================================================
+  function login() {
+    const pass = document.getElementById("passwordInput").value;
+    if (pass === PASSWORD) {
+      document.getElementById("loginSection").style.display = "none";
+      document.getElementById("dashboardSection").style.display = "block";
+      document.getElementById("loginError").textContent = "";
+      loadAllData();
+      if (refreshInterval) clearInterval(refreshInterval);
+      refreshInterval = setInterval(loadAllData, 1000);
     } else {
-      currentData = [];
-      list.innerHTML = '<div class="empty">✅ Semua siswa sudah diverifikasi hari ini.</div>';
-      countBadge.textContent = "0";
+      document.getElementById("loginError").textContent = "❌ Password salah!";
     }
-  } catch(err){
-    list.innerHTML = '<div class="empty">❌ Gagal memuat data. Periksa koneksi.</div>';
-    console.error(err);
   }
-}
 
-function renderList(data){
-  const list = document.getElementById("pendingList");
-  if(data.length === 0){
-    list.innerHTML = '<div class="empty">✅ Semua siswa sudah diverifikasi hari ini.</div>';
-    return;
+  function logout() {
+    document.getElementById("loginSection").style.display = "block";
+    document.getElementById("dashboardSection").style.display = "none";
+    document.getElementById("passwordInput").value = "";
+    document.getElementById("loginError").textContent = "";
+    if (refreshInterval) {
+      clearInterval(refreshInterval);
+      refreshInterval = null;
+    }
   }
-  
-  let html = '';
-  data.forEach((item, index) => {
-    html += `
-      <div class="card" id="row-${index}">
-        <div class="row">
-          <div>
-            <div class="nama">${item.nama}</div>
-            <div style="font-size:12px; color:#6E8478;">No. ${item.no} · ${item.jam}</div>
+
+  // ============================================================
+  // TABS
+  // ============================================================
+  function switchTab(tab) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector(`.tab-btn[data-tab="${tab}"]`).classList.add('active');
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    document.getElementById(`tab-${tab}`).classList.add('active');
+  }
+
+  // ============================================================
+  // LOAD DATA
+  // ============================================================
+  async function loadAllData() {
+    const [pendingData, confirmedData] = await Promise.all([
+      fetchData('getTodayPending'),
+      fetchData('getTodayConfirmed')
+    ]);
+    renderPending(pendingData);
+    renderConfirmed(confirmedData);
+    updateStats(pendingData, confirmedData);
+    updateDate();
+  }
+
+  async function fetchData(action) {
+    try {
+      const resp = await fetch(`${GAS_URL}?action=${action}`);
+      const json = await resp.json();
+      return json.result === "success" ? json.data : [];
+    } catch (e) {
+      console.error(`Error ${action}:`, e);
+      return [];
+    }
+  }
+
+  // ============================================================
+  // RENDER PENDING
+  // ============================================================
+  function renderPending(data) {
+    const container = document.getElementById('pendingList');
+    const badge = document.getElementById('pendingBadge');
+    badge.textContent = data.length;
+
+    if (!data || data.length === 0) {
+      container.innerHTML = `<div class="empty-state"><span class="icon">✅</span>Tidak ada yang menunggu verifikasi.</div>`;
+      return;
+    }
+
+    // Urutkan berdasarkan jam (terbaru di atas)
+    data.sort((a, b) => b.jam.localeCompare(a.jam));
+
+    let html = '';
+    data.forEach((item, index) => {
+      const mapsUrl = `https://www.google.com/maps?q=${item.latitude},${item.longitude}`;
+      html += `
+        <div class="card-item" id="pending-row-${index}">
+          <div class="card-left">
+            <div class="name">
+              ${item.nama}
+              <span class="no-badge">#${item.no}</span>
+            </div>
+            <div class="meta">
+              <span>🕒 ${item.jam}</span>
+              <a href="${mapsUrl}" target="_blank" class="map-link">📍 Lihat Lokasi</a>
+            </div>
           </div>
-          <div style="display:flex; align-items:center; gap:10px;">
-            <span class="status-badge">Menunggu</span>
-            <button class="btn btn-confirm" onclick="confirmAbsen('${item.nama}', ${index})">Verifikasi</button>
+          <div class="card-right">
+            <span class="status-badge status-pending">Menunggu</span>
+            <button class="btn-confirm" onclick="confirmAbsen('${item.nama}', ${index})">Verifikasi</button>
           </div>
         </div>
-      </div>
-    `;
-  });
-  list.innerHTML = html;
-}
-
-async function confirmAbsen(nama, index){
-  const btn = document.querySelector(`#row-${index} .btn-confirm`);
-  if(btn) { btn.disabled = true; btn.textContent = "Memproses..."; }
-  
-  try {
-    const url = GAS_URL + '?action=confirm&nama=' + encodeURIComponent(nama);
-    const resp = await fetch(url);
-    const data = await resp.json();
-    
-    if(data.result === "success"){
-      const row = document.getElementById(`row-${index}`);
-      if(row) row.remove();
-      const remaining = document.querySelectorAll('.card').length;
-      document.getElementById("pendingCount").textContent = remaining;
-      if(remaining === 0){
-        document.getElementById("pendingList").innerHTML = '<div class="empty">✅ Semua siswa sudah diverifikasi hari ini.</div>';
-      }
-    } else {
-      alert("Gagal verifikasi: " + (data.message || "Error"));
-      if(btn) { btn.disabled = false; btn.textContent = "Verifikasi"; }
-    }
-  } catch(err){
-    alert("Error: " + err.message);
-    if(btn) { btn.disabled = false; btn.textContent = "Verifikasi"; }
+      `;
+    });
+    container.innerHTML = html;
   }
-}
 
-document.getElementById("passwordInput").addEventListener("keydown", function(e){
-  if(e.key === "Enter") login();
-});
+  // ============================================================
+  // RENDER CONFIRMED
+  // ============================================================
+  function renderConfirmed(data) {
+    const container = document.getElementById('confirmedList');
+    const badge = document.getElementById('confirmedBadge');
+    badge.textContent = data.length;
+
+    if (!data || data.length === 0) {
+      container.innerHTML = `<div class="empty-state"><span class="icon">📭</span>Belum ada siswa yang selesai diverifikasi hari ini.</div>`;
+      return;
+    }
+
+    // Urutkan berdasarkan jam (terbaru di atas)
+    data.sort((a, b) => b.jam.localeCompare(a.jam));
+
+    let html = '';
+    data.forEach((item) => {
+      let statusClass = 'status-hadir';
+      let statusLabel = 'Hadir';
+      if (item.status === 'Izin') { statusClass = 'status-izin'; statusLabel = 'Izin'; }
+      else if (item.status === 'Sakit') { statusClass = 'status-sakit'; statusLabel = 'Sakit'; }
+
+      html += `
+        <div class="card-item">
+          <div class="card-left">
+            <div class="name">
+              ${item.nama}
+              <span class="no-badge">#${item.no}</span>
+            </div>
+            <div class="meta">
+              <span>🕒 ${item.jam}</span>
+              <span>✅ Diverifikasi</span>
+            </div>
+          </div>
+          <div class="card-right">
+            <span class="status-badge ${statusClass}">${statusLabel}</span>
+          </div>
+        </div>
+      `;
+    });
+    container.innerHTML = html;
+  }
+
+  // ============================================================
+  // STATS
+  // ============================================================
+  function updateStats(pending, confirmed) {
+    const total = pending.length + confirmed.length;
+    document.getElementById('statTotal').textContent = total;
+    document.getElementById('statPending').textContent = pending.length;
+    document.getElementById('statDone').textContent = confirmed.length;
+  }
+
+  // ============================================================
+  // CONFIRM ACTION
+  // ============================================================
+  async function confirmAbsen(nama, index) {
+    const btn = document.querySelector(`#pending-row-${index} .btn-confirm`);
+    if (btn) { btn.disabled = true; btn.textContent = "Memproses..."; }
+
+    try {
+      const resp = await fetch(`${GAS_URL}?action=confirm&nama=${encodeURIComponent(nama)}`);
+      const data = await resp.json();
+
+      if (data.result === "success") {
+        // Hapus baris pending
+        const row = document.getElementById(`pending-row-${index}`);
+        if (row) row.remove();
+
+        // Hitung ulang sisa pending
+        const remaining = document.querySelectorAll('#pending-list .card-item').length;
+        document.getElementById('pendingBadge').textContent = remaining;
+
+        if (remaining === 0) {
+          document.getElementById('pendingList').innerHTML = `<div class="empty-state"><span class="icon">✅</span>Tidak ada yang menunggu verifikasi.</div>`;
+        }
+
+        // Refresh confirmed list
+        const confirmedData = await fetchData('getTodayConfirmed');
+        renderConfirmed(confirmedData);
+        // Update stats
+        const pendingData = await fetchData('getTodayPending');
+        updateStats(pendingData, confirmedData);
+
+      } else {
+        alert("❌ Gagal verifikasi: " + (data.message || "Error"));
+        if (btn) { btn.disabled = false; btn.textContent = "Verifikasi"; }
+      }
+    } catch (err) {
+      alert("⚠️ Error: " + err.message);
+      if (btn) { btn.disabled = false; btn.textContent = "Verifikasi"; }
+    }
+  }
+
+  // ============================================================
+  // UPDATE DATE
+  // ============================================================
+  function updateDate() {
+    const now = new Date();
+    const options = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
+    document.getElementById('infoDate').textContent = `📅 Hari ini: ${now.toLocaleDateString('id-ID', options)}`;
+  }
+
+  // ============================================================
+  // ENTER KEY UNTUK LOGIN
+  // ============================================================
+  document.getElementById('passwordInput').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') login();
+  });
 </script>
+
 </body>
 </html>
