@@ -390,15 +390,15 @@ footer{ text-align:center; padding:12px 20px 26px; font-size:10px; color:var(--t
 
 <script>
 /* ==========================================================================
-   KONFIGURASI — RADIUS 5.000 METER (5 KM) UNTUK TESTING
+   KONFIGURASI — RADIUS 5 KM, 24 JAM, POLLING 1 DETIK
    ========================================================================== */
 const CONFIG = {
   schoolLat: -0.30975,
   schoolLng: 103.1621389,
-  radiusMeters: 5000, // <-- 5 KM
+  radiusMeters: 5000, // 5 km
   gasUrl: "https://script.google.com/macros/s/AKfycbxzm4quOwyYwbCTSwY4d86LVj4ubJzvcwtYsZv7Sbl8TaoBTMkcUjMlno5r4qAhiFQ/exec",
-  jamMulai: 0,    // 24 JAM (TESTING)
-  jamSelesai: 24, // 24 JAM (TESTING)
+  jamMulai: 0,
+  jamSelesai: 24,
   students: [
     { no: 1, nama: "ALFIAN NATANAEL NABABAN" },
     { no: 2, nama: "BAGUS TRI PASANDRA" },
@@ -434,7 +434,7 @@ const CONFIG = {
 };
 
 const LS_IDENTITY = "absensiMpp_identity";
-const LS_LAST_ABSEN = "absensiMpp_lastAbsenDate";
+const LS_LAST_ABSEN = "absensiMpp_lastAbsenDate"; // hanya untuk track hari ini (tidak menentukan status)
 const HARI = ["Minggu","Senin","Selasa","Rabu","Kamis","Jumat","Sabtu"];
 const BULAN = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
 
@@ -472,16 +472,13 @@ function hasAbsenToday(){
   return localStorage.getItem(LS_LAST_ABSEN) === todayKey(new Date());
 }
 
-/* ===== CEK STATUS VERIFIKASI DARI SERVER (POLLING 1 DETIK) ===== */
+/* ===== CEK STATUS VERIFIKASI DARI SERVER ===== */
 let statusPollInterval = null;
-async function checkVerificationStatus(nama, callback){
+async function checkVerificationStatus(nama){
   try {
     const url = CONFIG.gasUrl + '?action=getStatus&nama=' + encodeURIComponent(nama);
     const resp = await fetch(url);
     const data = await resp.json();
-    if (data.result === "success") {
-      if (callback) callback(data);
-    }
     return data;
   } catch(err) {
     console.error("Gagal cek status:", err);
@@ -489,6 +486,7 @@ async function checkVerificationStatus(nama, callback){
   }
 }
 
+// Fungsi untuk memperbarui tampilan status card (tidak mengubah layar)
 function updateStatusDisplay(status, jam, tanggal){
   const card = document.getElementById("statusCard");
   const badge = document.getElementById("statusBadge");
@@ -519,23 +517,6 @@ function updateStatusDisplay(status, jam, tanggal){
   }
   
   detail.textContent = `Jam: ${jam || '-'} · ${tanggal || ''}`;
-  
-  // Jika status sudah final, tandai hari ini sudah absen dan hentikan polling
-  if (status === "Hadir" || status === "Izin" || status === "Sakit") {
-    localStorage.setItem(LS_LAST_ABSEN, todayKey(new Date()));
-    if (statusPollInterval) {
-      clearInterval(statusPollInterval);
-      statusPollInterval = null;
-    }
-    // Pindah ke layar selesai
-    showScreen("screen-done");
-    document.getElementById("doneText").textContent = `✅ Absensi ${status} (${jam}) - Sudah diverifikasi.`;
-  } else {
-    // Jika status masih pending, pastikan LOCAL STORAGE TIDAK MENANDAI HARI INI SUDAH ABSEN
-    if (localStorage.getItem(LS_LAST_ABSEN) === todayKey(new Date())) {
-      localStorage.removeItem(LS_LAST_ABSEN);
-    }
-  }
 }
 
 async function init(){
@@ -548,33 +529,75 @@ async function init(){
 
   // Cek status dari server
   const statusData = await checkVerificationStatus(identity.nama);
+  
+  // Tentukan layar berdasarkan status yang didapat
   if (statusData && statusData.result === "success") {
-    updateStatusDisplay(statusData.status, statusData.jam, statusData.tanggal);
-  } else {
-    // Jika tidak ada data (belum absen), pastikan LS_LAST_ABSEN tidak menyetel hari ini
-    if (localStorage.getItem(LS_LAST_ABSEN) === todayKey(new Date())) {
+    const status = statusData.status;
+    updateStatusDisplay(status, statusData.jam, statusData.tanggal);
+    
+    if (status === "Menunggu Verifikasi") {
+      // Status pending: tampilkan layar absensi dengan card status
+      showScreen("screen-attendance");
+      document.getElementById("statusCard").style.display = "block";
+      // Pastikan tombol absen dinonaktifkan (sudah absen tapi pending)
+      document.getElementById("btnAbsen").disabled = true;
+      document.getElementById("absenBtnWrap").classList.remove("pinging");
+      // Hapus LS_LAST_ABSEN agar tidak dianggap sudah selesai
       localStorage.removeItem(LS_LAST_ABSEN);
+    } else if (status === "Hadir" || status === "Izin" || status === "Sakit") {
+      // Status final: tampilkan layar selesai
+      localStorage.setItem(LS_LAST_ABSEN, todayKey(new Date()));
+      showScreen("screen-done");
+      document.getElementById("doneText").textContent = `✅ Absensi ${status} (${statusData.jam}) - Sudah diverifikasi.`;
+      // Hentikan polling (tidak perlu)
+      if (statusPollInterval) {
+        clearInterval(statusPollInterval);
+        statusPollInterval = null;
+      }
+      // Tidak perlu polling lagi
+      return;
     }
+  } else {
+    // Belum ada data absen hari ini
     showScreen("screen-attendance");
     document.getElementById("statusCard").style.display = "none";
+    // Pastikan LS_LAST_ABSEN tidak menyetel hari ini
+    localStorage.removeItem(LS_LAST_ABSEN);
+    // Aktifkan tombol absen
+    document.getElementById("btnAbsen").disabled = false;
   }
 
-  if (!statusData || statusData.result !== "success") {
-    showScreen("screen-attendance");
-  }
-  
-  // Mulai polling jika identitas ada dan status belum final
+  // Mulai polling 1 detik jika status belum final
   if (identity) {
-    if (!hasAbsenToday()) {
+    // Cek apakah status final dari data terakhir
+    const isFinal = (statusData && statusData.result === "success" && 
+                     (statusData.status === "Hadir" || statusData.status === "Izin" || statusData.status === "Sakit"));
+    if (!isFinal) {
       if (statusPollInterval) clearInterval(statusPollInterval);
       statusPollInterval = setInterval(async () => {
         const data = await checkVerificationStatus(identity.nama);
         if (data && data.result === "success") {
-          updateStatusDisplay(data.status, data.jam, data.tanggal);
+          const currentStatus = data.status;
+          updateStatusDisplay(currentStatus, data.jam, data.tanggal);
+          
+          if (currentStatus === "Menunggu Verifikasi") {
+            // Pastikan layar tetap attendance dan LS_LAST_ABSEN dihapus
+            showScreen("screen-attendance");
+            document.getElementById("statusCard").style.display = "block";
+            document.getElementById("btnAbsen").disabled = true;
+            localStorage.removeItem(LS_LAST_ABSEN);
+          } else if (currentStatus === "Hadir" || currentStatus === "Izin" || currentStatus === "Sakit") {
+            // Status final: hentikan polling, pindah ke layar selesai
+            localStorage.setItem(LS_LAST_ABSEN, todayKey(new Date()));
+            showScreen("screen-done");
+            document.getElementById("doneText").textContent = `✅ Absensi ${currentStatus} (${data.jam}) - Sudah diverifikasi.`;
+            if (statusPollInterval) {
+              clearInterval(statusPollInterval);
+              statusPollInterval = null;
+            }
+          }
         }
       }, 1000);
-    } else {
-      showScreen("screen-done");
     }
   }
 }
@@ -713,6 +736,7 @@ async function onLocationSuccess(position, identity){
 
 function onSendSuccess(payload, distance, accuracy){
   document.getElementById("absenBtnWrap").classList.remove("pinging");
+  // TIDAK SET LS_LAST_ABSEN DI SINI
   const googleMaps=`https://www.google.com/maps?q=${payload.latitude},${payload.longitude}`;
   
   const statusText = payload.status === "Hadir" ? "Menunggu Verifikasi Guru" : payload.status;
@@ -734,14 +758,32 @@ function onSendError(payload, err){
 
 function finishAbsen(){
   closeOverlay();
+  // Kembali ke layar absensi (akan muncul status card pending)
   showScreen("screen-attendance");
+  // Mulai polling untuk update status
   const identity = getIdentity();
   if (identity) {
     if (statusPollInterval) clearInterval(statusPollInterval);
     statusPollInterval = setInterval(async () => {
       const data = await checkVerificationStatus(identity.nama);
       if (data && data.result === "success") {
-        updateStatusDisplay(data.status, data.jam, data.tanggal);
+        const currentStatus = data.status;
+        updateStatusDisplay(currentStatus, data.jam, data.tanggal);
+        if (currentStatus === "Menunggu Verifikasi") {
+          // Pastikan layar attendance dan LS_LAST_ABSEN dihapus
+          showScreen("screen-attendance");
+          document.getElementById("statusCard").style.display = "block";
+          document.getElementById("btnAbsen").disabled = true;
+          localStorage.removeItem(LS_LAST_ABSEN);
+        } else if (currentStatus === "Hadir" || currentStatus === "Izin" || currentStatus === "Sakit") {
+          localStorage.setItem(LS_LAST_ABSEN, todayKey(new Date()));
+          showScreen("screen-done");
+          document.getElementById("doneText").textContent = `✅ Absensi ${currentStatus} (${data.jam}) - Sudah diverifikasi.`;
+          if (statusPollInterval) {
+            clearInterval(statusPollInterval);
+            statusPollInterval = null;
+          }
+        }
       }
     }, 1000);
   }
